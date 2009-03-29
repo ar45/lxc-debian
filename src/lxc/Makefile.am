@@ -1,4 +1,4 @@
-INCLUDES= -I$(top_srcdir)/src -DLXCPATH="\"$(localstatedir)/lxc\"" \
+INCLUDES= -I$(top_srcdir)/src -DLXCPATH="\"$(localstatedir)/lib/lxc\"" \
 	  -DLXCBINDIR="\"$(bindir)\"" \
 	  -DLXCLIBEXECDIR="\"$(libexecdir)\""
 AM_LDFLAGS= -lutil

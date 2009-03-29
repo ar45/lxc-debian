@@ -284,7 +284,7 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-INCLUDES = -I$(top_srcdir)/src -DLXCPATH="\"$(localstatedir)/lxc\"" \
+INCLUDES = -I$(top_srcdir)/src -DLXCPATH="\"$(localstatedir)/lib/lxc\"" \
 	  -DLXCBINDIR="\"$(bindir)\"" \
 	  -DLXCLIBEXECDIR="\"$(libexecdir)\""
 
@@ -859,10 +859,6 @@ uninstall-am: uninstall-binPROGRAMS uninstall-binSCRIPTS \
 	uninstall-binSCRIPTS uninstall-libLTLIBRARIES \
 	uninstall-libexecPROGRAMS uninstall-pkgincludeHEADERS
 
-
-install-exec-local:
-	@mkdir -p $(localstatedir) && mkdir -p $(prefix)/var/lxc && \
-	chmod ugo+rw $(prefix)/var/lxc
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

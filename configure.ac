@@ -1,10 +1,9 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_INIT([lxc], [0.6.1])
+AC_INIT([lxc], [0.6.2])
 
-AC_CONFIG_SRCDIR([configure.in])
-AC_CONFIG_MACRO_DIR([m4])
+AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR([config])
 AM_CONFIG_HEADER([src/config.h])
 AM_INIT_AUTOMAKE([-Wno-portability])
@@ -19,6 +18,7 @@ AS_AC_EXPAND(BINDIR, $bindir)
 AS_AC_EXPAND(LIBEXECDIR, $libexecdir)
 AS_AC_EXPAND(SYSCONFDIR, $sysconfdir)
 AS_AC_EXPAND(LOCALSTATEDIR, $localstatedir)
+AS_AC_EXPAND(LXCPATH, "${localstatedir}/lib/lxc")
 
 AC_CHECK_HEADERS([linux/netlink.h linux/genetlink.h], [], AC_MSG_ERROR([netlink headers not found]),
 [#include <linux/types.h>
@@ -113,7 +113,7 @@ AC_CONFIG_COMMANDS([default],[[]],[[]])
 AC_OUTPUT
 
 if test "x$DOCBOOK" = "xno"; then
-   AC_MSG_NOTICE([ 
+   AC_MSG_NOTICE([
 
 Warning:
 --------
@@ -125,7 +125,7 @@ If you want the man pages, install docbook and rerun 'configure'.
 fi
 
 if test "x$SETCAP" = "xno"; then
-   AC_MSG_NOTICE([ 
+   AC_MSG_NOTICE([
 
 Warning:
 --------
@@ -138,7 +138,7 @@ that's ok, but you will need to run these commands as root
 
 else
 
-   AC_MSG_NOTICE([ 
+   AC_MSG_NOTICE([
 
 Advice:
 -------

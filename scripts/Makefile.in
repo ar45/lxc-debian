@@ -38,7 +38,7 @@ DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(srcdir)/lxc-sshd.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/acinclude.m4 \
-	$(top_srcdir)/configure.in
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -93,6 +93,7 @@ LIBTOOL = @LIBTOOL@
 LN_S = @LN_S@
 LOCALSTATEDIR = @LOCALSTATEDIR@
 LTLIBOBJS = @LTLIBOBJS@
+LXCPATH = @LXCPATH@
 LXC_MAJOR_VERSION = @LXC_MAJOR_VERSION@
 LXC_MICRO_VERSION = @LXC_MICRO_VERSION@
 LXC_MINOR_VERSION = @LXC_MINOR_VERSION@

@@ -1,19 +1,21 @@
-INCLUDES= -I$(top_srcdir)/src -DLXCPATH="\"$(localstatedir)/lib/lxc\"" \
+INCLUDES= -I$(top_srcdir)/src -DLXCPATH="\"@LXCPATH@\"" \
 	  -DLXCBINDIR="\"$(bindir)\"" \
 	  -DLXCLIBEXECDIR="\"$(libexecdir)\""
 AM_LDFLAGS= -lutil
 lib_LTLIBRARIES = liblxc.la
 pkginclude_HEADERS = \
+		error.h \
 		monitor.h \
+		utils.h \
+		namespace.h \
+		lock.h \
 		lxc.h \
-		lxc_cgroup.h \
-		lxc_conf.h \
-		lxc_list.h \
-		lxc_lock.h \
-		lxc_log.h \
-		lxc_namespace.h \
-		lxc_state.h \
-		lxc_utils.h
+		cgroup.h \
+		conf.h \
+		list.h \
+		log.h \
+		state.h
+
 
 liblxc_la_SOURCES = \
 	create.c \
@@ -31,12 +33,12 @@ liblxc_la_SOURCES = \
 	cgroup.c cgroup.h \
 	lxc.h \
 	lxc_utils.h \
-	lxc_lock.c lxc_lock.h \
-	lxc_namespace.h \
-	lxc_conf.c lxc_conf.h \
-	lxc_list.h \
-	lxc_state.c lxc_state.h \
-	lxc_log.c lxc_log.h \
+	lock.c lock.h \
+	namespace.h \
+	conf.c conf.h \
+	list.h \
+	state.c state.h \
+	log.c log.h \
 	\
 	network.c network.h \
         nl.c nl.h \
@@ -84,7 +86,7 @@ lxc_unshare_LDADD = liblxc.la
 lxc_init_SOURCES = lxc_init.c
 lxc_init_LDADD = liblxc.la
 
-lxc_create_SOURCES = lxc_create.c lxc_config.c lxc_config.h
+lxc_create_SOURCES = lxc_create.c confile.c confile.h
 lxc_create_LDADD = liblxc.la
 
 lxc_destroy_SOURCES = lxc_destroy.c
@@ -96,7 +98,7 @@ lxc_start_LDADD = liblxc.la
 lxc_stop_SOURCES = lxc_stop.c
 lxc_stop_LDADD = liblxc.la
 
-lxc_execute_SOURCES = lxc_execute.c lxc_config.c lxc_config.h
+lxc_execute_SOURCES = lxc_execute.c confile.c confile.h
 lxc_execute_LDADD = liblxc.la
 
 lxc_monitor_SOURCES = lxc_monitor.c
@@ -130,5 +132,4 @@ lxc_version_SOURCES = lxc_version.c
 lxc_version_LDADD = liblxc.la
 
 install-exec-local:
-	@mkdir -p $(localstatedir) && mkdir -p $(prefix)/var/lxc && \
-	chmod ugo+rw $(prefix)/var/lxc
+	@mkdir -p $(DESTDIR)@LXCPATH@

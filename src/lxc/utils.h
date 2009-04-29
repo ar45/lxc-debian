@@ -20,9 +20,32 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
+#ifndef _utils_h
+#define _utils_h
 
-extern int lxc_config_init(struct lxc_conf *conf);
-extern int lxc_config_read(const char *file, struct lxc_conf *conf);
+#define LXC_TTY_HANDLER(s) \
+	static struct sigaction lxc_tty_sa_##s;				\
+	static void tty_##s##_handler(int sig, siginfo_t *info, void *ctx) \
+	{								\
+		if (lxc_tty_sa_##s.sa_handler == SIG_DFL ||		\
+		    lxc_tty_sa_##s.sa_handler == SIG_IGN)		\
+			return;						\
+		(*lxc_tty_sa_##s.sa_sigaction)(sig, info, ctx);	\
+	}
 
+#define LXC_TTY_ADD_HANDLER(s) \
+	do { \
+		struct sigaction sa; \
+		sa.sa_sigaction = tty_##s##_handler; \
+		sa.sa_flags = SA_SIGINFO; \
+		sigfillset(&sa.sa_mask); \
+		/* No error expected with sigaction. */ \
+		sigaction(s, &sa, &lxc_tty_sa_##s); \
+	} while (0)
 
+#define LXC_TTY_DEL_HANDLER(s) \
+	do { \
+		sigaction(s, &lxc_tty_sa_##s, NULL); \
+	} while (0)
 
+#endif

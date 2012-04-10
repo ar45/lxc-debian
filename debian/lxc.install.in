@@ -1,8 +1,8 @@
 etc
 usr/bin
-usr/lib/i386-linux-gnu/lxc/*.so.*
-usr/lib/i386-linux-gnu/lxc/lxc-*
-usr/lib/i386-linux-gnu/lxc/README
+usr/lib/@DEB_HOST_MULTIARCH@/lxc/*.so.*
+usr/lib/@DEB_HOST_MULTIARCH@/lxc/lxc-*
+usr/lib/@DEB_HOST_MULTIARCH@/lxc/README
 usr/share/doc
 usr/share/lxc
 usr/share/man

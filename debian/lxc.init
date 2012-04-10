@@ -46,7 +46,7 @@ Lxc ()
 
 	for _CONFIG in /etc/lxc/auto/*
 	do
-		_CONTAINER="$(basename $(dirname $(readlink -e ${_CONFIG})))"
+		_CONTAINER="$(basename ${_CONFIG})"
 
 		if [ -L "${_CONFIG}" ] && [ ! -e "${_CONFIG}" ]
 		then
@@ -72,7 +72,7 @@ Lxc ()
 				then
 					log_progress_msg "${_CONTAINER}"
 
-					lxc-start -n ${_CONTAINER} -f ${_CONFIG} -d
+					lxc-${_PROGRAM} -n ${_CONTAINER} -f ${_CONFIG} -d
 				else
 					log_progress_msg "${_CONTAINER} (skip)"
 				fi

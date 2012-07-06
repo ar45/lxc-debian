@@ -1,19 +1,15 @@
+#!/bin/sh
+
+set -e
+
+cat << EOF
 etc
 usr/bin
-usr/lib/i386-linux-gnu/lxc/*.so.*
-usr/lib/i386-linux-gnu/lxc/lxc-*
-usr/lib/i386-linux-gnu/lxc/README
-usr/lib/i386-linux-gnu/lxc/templates
+usr/lib/lxc/*.so.*
+usr/lib/lxc/lxc-*
+usr/lib/lxc/README
 usr/share/doc
+usr/share/lxc
 usr/share/man
 var
-
-debian/local/lxc		/usr/bin
-debian/local/lxc-backup		/usr/bin
-debian/local/lxc-halt		/usr/bin
-debian/local/lxc-list		/usr/bin
-debian/local/lxc-ls		/usr/bin
-debian/local/lxc-restore	/usr/bin
-debian/local/lxc.sh		/etc/bash_completion.d
-
-debian/local/lxc-debconf*	/usr/lib/i386-linux-gnu/lxc/templates
+EOF

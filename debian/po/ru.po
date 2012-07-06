@@ -1,13 +1,13 @@
 # Russian translation of lxc debconf templates.
-# Copyright (C) 2011 Yuri Kozlov <yuray@komyakino.ru>
+# Copyright (C) 2011-2012 Yuri Kozlov <yuray@komyakino.ru>
 # This file is distributed under the same license as the lxc package.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: lxc 0.7.5-15\n"
+"Project-Id-Version: lxc 0.8.0~rc1-4\n"
 "Report-Msgid-Bugs-To: lxc@packages.debian.org\n"
 "POT-Creation-Date: 2012-02-09 13:08+0100\n"
-"PO-Revision-Date: 2011-12-17 09:36+0400\n"
+"PO-Revision-Date: 2012-05-21 21:39+0400\n"
 "Last-Translator: Yuri Kozlov <yuray@komyakino.ru>\n"
 "Language-Team: Russian <debian-l10n-russian@lists.debian.org>\n"
 "Language: ru\n"
@@ -16,6 +16,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
 "%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"X-Generator: Lokalize 1.2\n"
 
 #. Type: title
 #. Description
@@ -51,29 +52,21 @@ msgstr "Если не уверены, ответьте утвердительн�
 #. Type: select
 #. Description
 #: ../lxc.templates:3001
-#, fuzzy
-#| msgid "Linux Container: Stop method"
 msgid "Linux Container: Shutdown method"
-msgstr "Linux Container: метод остановки"
+msgstr "Linux Container: метод выключения"
 
 #. Type: select
 #. Description
 #: ../lxc.templates:3001
-#, fuzzy
-#| msgid ""
-#| "Linux Containers can be stopped in different ways. The stop method kills "
-#| "all processes inside the container. The halt method initiates a shutdown, "
-#| "which takes longer and can have problems with containers that don't "
-#| "shutdown themselfs properly."
 msgid ""
 "Linux Containers can be shutdown in different ways. The stop method "
 "terminates all processes inside the container. The halt method initiates a "
 "shutdown, which takes longer and can have problems with containers that "
-"don't shutdown themselfs properly."
+"don't shutdown themselves properly."
 msgstr ""
-"Работу Linux Containers можно останавливать разными способами. Метод stop "
-"«убивает» все процессы внутри контейнера. Метод halt запускает процесс "
-"выключения, который выполняется дольше и может привести к проблеме с "
+"Работу Linux Containers можно выключать разными способами. Метод stop "
+"завершает все процессы внутри контейнера. Метод halt запускает процесс "
+"выключения, который выполняется дольше и могут возникнуть проблемы с "
 "контейнерами, которые не могут самостоятельно выключиться правильно."
 
 #. Type: select
@@ -83,6 +76,8 @@ msgid ""
 "Unless you know that your containers don't shutdown properly, choose halt "
 "(default)."
 msgstr ""
+"Если вы знаете, что ваши контейнеры не выключаются корректно, выберите "
+"остановку (halt, по умолчанию)."
 
 #. Type: string
 #. Description
@@ -103,6 +98,3 @@ msgstr ""
 #: ../lxc.templates:4001
 msgid "If unsure, use /var/lib/lxc (default)."
 msgstr "Если не уверены, используйте /var/lib/lxc (по умолчанию)."
-
-#~ msgid "If unsure, choose stop (default)."
-#~ msgstr "Если не уверены, выберите stop (по умолчанию)."

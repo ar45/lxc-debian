@@ -1,5 +1,25 @@
 #!/bin/bash
 
+## lxc-debconf - LXC template for Debian and Debian Derivatives
+## Copyright (C) 2006-2012 Daniel Baumann <daniel.baumann@progress-technologies.net>
+##
+## This program is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation, either version 3 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program. If not, see <http://www.gnu.org/licenses/>.
+##
+## The complete text of the GNU General Public License
+## can be found in /usr/share/common-licenses/GPL-3 file.
+
+
 Chroot ()
 {
 	_CHROOT="${1}"
@@ -97,6 +117,11 @@ Configure_system ()
 
 			${_PARENT_DIST}-proposed-updates)
 				echo "deb ${_PARENT_MIRROR} ${_PARENT_DIST}-proposed-updates ${_PARENT_AREA}" >> "${_ROOTFS}/etc/apt/sources.list.d/debian.list"
+				;;
+
+			experimental)
+				echo "deb ${_PARENT_MIRROR} experimental ${_PARENT_AREA}" >> "${_ROOTFS}/etc/apt/sources.list.d/debian.list"
+				;;
 		esac
 	done
 
@@ -169,10 +194,13 @@ EOF
 	Upgrade_system "${_ROOTFS}"
 
 	# Temporary hack for base-files (FIXME)
-	for _FILE in motd profile
+	for _FILE in motd.tail motd profile
 	do
-		rm -f "${_ROOTFS}/etc/${_FILE}"
-		cp "${_ROOTFS}/usr/share/base-files/${_FILE}" "${_ROOTFS}/etc"
+		if [ -e "${_ROOTFS}/usr/share/base-files/${_FILE}" ]
+		then
+			rm -f "${_ROOTFS}/etc/${_FILE}"
+			cp "${_ROOTFS}/usr/share/base-files/${_FILE}" "${_ROOTFS}/etc"
+		fi
 	done
 
 	# Removing hostname
@@ -204,27 +232,36 @@ EOF
 		Chroot "${_ROOTFS}" "apt-get --yes install ${_PACKAGES}"
 	fi
 
-	# Configure linux-container
-
-cat > "${_ROOTFS}/preseed.cfg" << EOF
-linux-container linux-container/enable boolean true
-EOF
-
-	Chroot "${_ROOTFS}" "debconf-set-selections preseed.cfg"
-
-	rm -f "${_ROOTFS}/preseed.cfg"
-
-	if ls /usr/share/lxc/linux-container*deb > /dev/null 2>&1
+	# Install live-config
+	if ls /usr/share/lxc/packages/live-config*.deb > /dev/null 2>&1
 	then
-		# Install local linux-container package
-		cp -L /usr/share/lxc/linux-container_*.deb "${_ROOTFS}"
-
-		Chroot "${_ROOTFS}" "dpkg -i $(basename ${_ROOTFS}/linux-container_*.deb)"
-		rm -f "${_ROOTFS}"/linux-container_*.deb
+		# Install local live-config package
+		for _PACKAGE in /usr/share/lxc/packages/live-config-*_*.deb /usr/share/lxc/packages/live-config_*.deb
+		do
+			cp -L ${_PACKAGE} "${_ROOTFS}"
+			Chroot "${_ROOTFS}" "dpkg -i $(basename ${_ROOTFS}/live-config*.deb)"
+			rm -f "${_ROOTFS}"/live-config*.deb
+		done
 	else
-		# Install remote linux-container package
-		Chroot "${_ROOTFS}" "apt-get install --yes linux-container"
+		# Install remote live-config package
+		Chroot "${_ROOTFS}" "apt-get install --yes live-config"
 	fi
+
+	# Initialize live-debconfig debconf database
+	Chroot "${_ROOTFS}" "live-debconfig --noscripts"
+
+	# Preseed live-debconfig
+	if [ -e "${_PRESEED_FILE}" ]
+	then
+		cat "${_PRESEED_FILE}" > "${_ROOTFS}/preseed.cfg"
+
+		Chroot "${_ROOTFS}" "DEBCONF_SYSTEMRC=/var/lib/live/debconfig/systemrc debconf-set-selections preseed.cfg"
+
+		rm -f "${_ROOTFS}/preseed.cfg"
+	fi
+
+	# Run live-debconfig
+	Chroot "${_ROOTFS}" "live-debconfig"
 
 	# Configure user-setup
 
@@ -289,14 +326,14 @@ Download_system ()
 	if [ -x "$(which cdebootstrap 2>/dev/null)" ]
 	then
 		cdebootstrap --arch=${_ARCHITECTURE} \
-			--flavour=minimal --include=${_INCLUDE} \
+			--flavour=minimal --include=bzip2,${_INCLUDE} \
 			${_PARENT_DISTRIBUTION} "${_CACHE}/${_DISTRIBUTION}_${_ARCHITECTURE}.partial" ${_PARENT_MIRROR}
 
 		Chroot "${_CACHE}/${_DISTRIBUTION}_${_ARCHITECTURE}.partial" "dpkg --purge cdebootstrap-helper-rc.d"
 	elif [ -x "$(which debootstrap 2>/dev/null)" ]
 	then
 		debootstrap --verbose --arch=${_ARCHITECTURE} --components=${_PARENT_ARCHIVE_AREAS} \
-			--variant=minbase --include=${_INCLUDE} \
+			--variant=minbase --include=bzip2,${_INCLUDE} \
 			${_PARENT_DISTRIBUTION} "${_CACHE}/${_DISTRIBUTION}_${_ARCHITECTURE}.partial" ${_PARENT_MIRROR}
 	fi
 
@@ -416,22 +453,22 @@ Copy_system ()
 	_ARCHITECTURE="${2}"
 	_ROOTFS="${3}"
 
-	if [ -e "/usr/lib/lxc/cache/${_MODE}/${_DISTRIBUTION}_${_ARCHITECTURE}" ]
+	if [ -e "/usr/share/lxc/cache/${_MODE}/${_DISTRIBUTION}_${_ARCHITECTURE}" ]
 	then
 		# system cache in the form of a directory
 		echo -n "Copying system cache to ${_ROOTFS}..."
-		cp -a "/usr/lib/lxc/cache/${_MODE}/${_DISTRIBUTION}_${_ARCHITECTURE}" "${_ROOTFS}" || return 1
-	elif ls "/usr/lib/lxc/cache/${_MODE}/${_DISTRIBUTION}_${_ARCHITECTURE}".* > /dev/null 2>&1
+		cp -a "/usr/share/lxc/cache/${_MODE}/${_DISTRIBUTION}_${_ARCHITECTURE}" "${_ROOTFS}" || return 1
+	elif ls "/usr/share/lxc/cache/${_MODE}/${_DISTRIBUTION}_${_ARCHITECTURE}".* > /dev/null 2>&1
 	then
 		# system cache in the form of a tarball
 		for _FORMAT in tar.lz tar.xz tar.lzma tar.bz2 tar.gz tar
 		do
-			if [ -e "/usr/lib/lxc/cache/${_MODE}/${_DISTRIBUTION}_${_ARCHITECTURE}.${_FORMAT}" ]
+			if [ -e "/usr/share/lxc/cache/${_MODE}/${_DISTRIBUTION}_${_ARCHITECTURE}.${_FORMAT}" ]
 			then
 				echo -n "Extracting system cache to ${_ROOTFS}..."
 
 				mkdir -p "${_ROOTFS}"
-				tar xf "/usr/lib/lxc/cache/${_MODE}/${_DISTRIBUTION}_${_ARCHITECTURE}.${_FORMAT}" -C "${_ROOTFS}" || return 1
+				tar xf "/usr/share/lxc/cache/${_MODE}/${_DISTRIBUTION}_${_ARCHITECTURE}.${_FORMAT}" -C "${_ROOTFS}" || return 1
 				break
 			fi
 		done
@@ -486,7 +523,7 @@ Install_system ()
 
 		_ARCHITECTURE="${_ARCHITECTURE:-$(dpkg --print-architecture)}"
 
-		if ! ls "/usr/lib/lxc/cache/${_MODE}/${_DISTRIBUTION}_${_ARCHITECTURE}"* > /dev/null 2>&1 && \
+		if ! ls "/usr/share/lxc/cache/${_MODE}/${_DISTRIBUTION}_${_ARCHITECTURE}"* > /dev/null 2>&1 && \
 		   [ ! -e "${_CACHE}/${_DISTRIBUTION}_${_ARCHITECTURE}" ]
 		then
 			Download_system "${_CACHE}" "${_ARCHITECTURE}"
@@ -594,10 +631,10 @@ lxc.mount.entry                         = sysfs ${_ROOTFS}/sys sysfs defaults,ro
 EOF
 
 	# Adding preseeded mount entries
-	for _NUMBER in $(seq 0 ${LINUX_CONTAINER_MOUNT_NUMBER})
+	for _NUMBER in $(seq 0 ${LXC_DEBCONF_MOUNT_NUMBER})
 	do
-		eval _COMMENT="$`echo LINUX_CONTAINER_MOUNT${_NUMBER}_COMMENT`"
-		eval _ENTRY="$`echo LINUX_CONTAINER_MOUNT${_NUMBER}_ENTRY`"
+		eval _COMMENT="$`echo LXC_DEBCONF_MOUNT${_NUMBER}_COMMENT`"
+		eval _ENTRY="$`echo LXC_DEBCONF_MOUNT${_NUMBER}_ENTRY`"
 
 		if [ -n "${_COMMENT}" ]
 		then
@@ -632,13 +669,12 @@ EOF
 	fi
 
 	# Adding network configuration
-	for _NUMBER in $(seq 0 ${LINUX_CONTAINER_ETH_NUMBER})
+	for _NUMBER in $(seq 0 ${LXC_DEBCONF_ETH_NUMBER})
 	do
-		eval _COMMENT="$`echo LINUX_CONTAINER_ETH${_NUMBER}_COMMENT`"
-		eval _BRIDGE="$`echo LINUX_CONTAINER_ETH${_NUMBER}_BRIDGE`"
-		eval _MAC="$`echo LINUX_CONTAINER_ETH${_NUMBER}_MAC`"
-		eval _MTU="$`echo LINUX_CONTAINER_ETH${_NUMBER}_MTU`"
-		eval _VETH="$`echo LINUX_CONTAINER_ETH${_NUMBER}_VETH`"
+		eval _COMMENT="$`echo LXC_DEBCONF_ETH${_NUMBER}_COMMENT`"
+		eval _BRIDGE="$`echo LXC_DEBCONF_ETH${_NUMBER}_BRIDGE`"
+		eval _MAC="$`echo LXC_DEBCONF_ETH${_NUMBER}_MAC`"
+		eval _VETH="$`echo LXC_DEBCONF_ETH${_NUMBER}_VETH`"
 
 		if [ -n "${_COMMENT}" ]
 		then
@@ -664,11 +700,6 @@ lxc.network.hwaddr                      = ${_MAC}
 lxc.network.link                        = ${_BRIDGE}
 EOF
 
-		if [ -n "${_MTU}" ]
-		then
-			echo "lxc.network.mtu                         = ${_MTU}" >> "${_PATH}/config"
-		fi
-
 		echo "lxc.network.name                        = eth${_NUMBER}" >> "${_PATH}/config"
 
 		if [ -n "${_VETH}" ]
@@ -684,6 +715,7 @@ EOF
 
 	case "${_AUTO}" in
 		true)
+			mkdir -p /etc/lxc/auto
 			ln -s ${_PATH}/config /etc/lxc/auto/${_NAME}
 			;;
 	esac
@@ -868,7 +900,7 @@ DEBCONF_SYSTEMRC="${_TMPDIR}/debconf.systemrc"
 export DEBCONF_SYSTEMRC
 
 # Run debconf parts
-for _SCRIPT in /usr/lib/lxc/templates/lxc-debconf.d/*
+for _SCRIPT in /usr/share/lxc/templates/lxc-debconf.d/*
 do
 	if [ -x "${_SCRIPT}" ]
 	then

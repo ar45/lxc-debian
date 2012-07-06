@@ -9,3 +9,5 @@
 09-lxc-create-trap-name.patch
 10-lxc-clone-trap-name.patch
 11-lxc-console-escape.patch
+12-lxc-create-rootfs.patch
+debian-changes-0.8.0~rc1-4~bpo60+1

@@ -1,3 +1,9 @@
+#!/bin/sh
+
+set -e
+
+cat << EOF
 usr/include
-usr/lib/i386-linux-gnu/lxc/*.so
+usr/lib/lxc/*.so
 usr/share/pkgconfig
+EOF

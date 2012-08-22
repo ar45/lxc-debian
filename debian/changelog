@@ -1,3 +1,15 @@
+lxc (0.8.0~rc1-8+deb7u1) wheezy; urgency=low
+
+  * Non-maintainer upload.
+  * Adding updated Danish debconf translations from Joe Dalton
+    <joedalton2@yahoo.dk> (Closes: #684572).
+  * Adding updated Czech debconf translations from Michal Simunek
+    <michal.simunek@gmail.com> (Closes: #679681).
+  * Adding Japanese debconf translations from Kenshi Muto
+    <kmuto@debian.org> (Closes: #683123).
+
+ -- David Prévot <taffit@debian.org>  Wed, 22 Aug 2012 16:43:25 -0400
+
 lxc (0.8.0~rc1-8) unstable; urgency=low
 
   * Removing comments in lxc-debconf debconf templates, apparently

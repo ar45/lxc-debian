@@ -17,6 +17,21 @@ offers. See http://bugs.debian.org/534964 for more information.
 If you use a Debian wheezy kernel or newer, all of the features are enabled
 including the resource controller.
 
+In order to enable the memory controller for Debian wheezy, the following
+boot parameter needs to be used:
+
+	cgroup_enable=memory
+
+In order to enable the swap controller for Debian wheezy, the following
+boot parameter needs to be used:
+
+	swapaccount
+
+In order to enable apparmor which lxc can make use of, the following
+boot parameter needs to be used:
+
+	security=apparmor
+
 Note: Kernel version before 2.6.36 do crash when using two bridge network
 interfaces with LXC. If you need more than one bridge on the host system,
 make sure you upgrade your kernel first.
@@ -55,5 +70,21 @@ into the /etc/lxc/auto directory.
 Note that the name in /etc/lxc/auto needs to be the container name, e.g.:
 
   /etc/lxc/auto/www.example.org -> /var/lib/lxc/www.example.org/config
+
+
+5. Directory
+
+LXC container are stored in /var/lib/lxc by default. Various components within the
+lxc package assume that the containers are there. Therefore, if you want to move
+the containers to another directory, use:
+
+  # dpkg-reconfigure -plow lxc
+
+and answer the debconf question about the lxc directory accordingly. The package's
+maintainer scripts will take care about replacing /var/lib/lxc (if empty) with a
+symlink to your new lxc directory.
+
+In case you're doing things manually, make sure that /var/lib/lxc is a symlink
+pointing to your lxc directory at all times.
 
  -- Daniel Baumann <daniel.baumann@progress-technologies.net>  Tue, 12 Jul 2011 20:32:16 +0200

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-## lxc-debconf - LXC template for Debian and Debian Derivatives
+## lxc-debconfig - LXC template for Debian and Debian Derivatives
 ## Copyright (C) 2006-2012 Daniel Baumann <daniel.baumann@progress-technologies.net>
 ##
 ## This program is free software: you can redistribute it and/or modify
@@ -203,6 +203,9 @@ EOF
 		fi
 	done
 
+	rm -f ${_ROOTFS}/etc/dpkg/origins/default
+	Chroot "${_ROOTFS}" "dpkg-reconfigure base-files"
+
 	# Removing hostname
 	rm -f "${_ROOTFS}"/etc/hostname
 
@@ -224,12 +227,6 @@ EOF
 	if grep -qs tzdata "${_PRESEED_FILE}"
 	then
 		Chroot "${_ROOTFS}" "DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=criticial dpkg-reconfigure tzdata"
-	fi
-
-	# Install additional packages
-	if [ -n "${_PACKAGES}" ]
-	then
-		Chroot "${_ROOTFS}" "apt-get --yes install ${_PACKAGES}"
 	fi
 
 	# Install live-debconfig
@@ -274,6 +271,12 @@ EOF
 
 	# Run live-debconfig
 	Chroot "${_ROOTFS}" "DEBIAN_FRONTEND=dialog DEBIAN_PRIORITY=high live-debconfig"
+
+	# Install additional packages
+	if [ -n "${_PACKAGES}" ]
+	then
+		Chroot "${_ROOTFS}" "apt-get --yes install ${_PACKAGES}"
+	fi
 
 	# Configure user-setup
 
@@ -925,12 +928,12 @@ DEBCONF_SYSTEMRC="${_TMPDIR}/debconf.systemrc"
 export DEBCONF_SYSTEMRC
 
 # Run debconf parts
-for _SCRIPT in /usr/share/lxc/templates/lxc-debconf.d/*
+for _SCRIPT in /usr/share/lxc/templates/lxc-debconfig.d/*
 do
 	if [ -x "${_SCRIPT}" ]
 	then
 		# FIXME
-		#debconf -olxc-debconf "${_SCRIPT}"
+		#debconf -olxc-debconfig "${_SCRIPT}"
 		"${_SCRIPT}"
 	fi
 done

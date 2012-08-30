@@ -23,18 +23,18 @@ Distribution ()
 	then
 		case "${_MODE}" in
 			debian)
-				db_subst lxc-debconfig/distribution CHOICES "Debian GNU/Linux 6.0 \"squeeze\", Debian GNU/Linux 7.0 \"wheezy\", Debian GNU/Linux unstable/sid"
-				db_subst lxc-debconfig/distribution CHOICES_C "squeeze, wheezy, sid"
+				db_subst lxc-debconfig/distribution CHOICES "Debian GNU/Linux 6.0 \"squeeze\", Debian GNU/Linux 7.0 \"wheezy\", Debian GNU/Linux 8.0 \"jessie\", Debian GNU/Linux unstable/sid"
+				db_subst lxc-debconfig/distribution CHOICES_C "squeeze, wheezy, jessie, sid"
 
-				db_set lxc-debconfig/distribution squeeze
+				db_set lxc-debconfig/distribution wheezy
 				db_fset lxc-debconfig/distribution seen false
 				;;
 
 			progress)
-				db_subst lxc-debconfig/distribution CHOICES "Progress Linux 1.0 (artax), Progress Linux 1.9 (artax-backports), Progress Linux 2.0 (baureo)"
-				db_subst lxc-debconfig/distribution CHOICES_C "artax, artax-backports, baureo"
+				db_subst lxc-debconfig/distribution CHOICES "Progress Linux 1.0 (artax), Progress Linux 1.9 (artax-backports), Progress Linux 2.0 (baureo), Progress Linux 2.9 (baureo-backports), Progress Linux 3.0 (charon), Progress Linux 3.9 (charon-backports)"
+				db_subst lxc-debconfig/distribution CHOICES_C "artax, artax-backports, baureo, baureo-backports, charon, charon-backports"
 
-				db_set lxc-debconfig/distribution artax
+				db_set lxc-debconfig/distribution baureo
 				db_fset lxc-debconfig/distribution seen false
 				;;
 		esac
@@ -66,6 +66,10 @@ Parent_distribution ()
 						;;
 
 					baureo*)
+						_PARENT_DISTRIBUTION="wheezy"
+						;;
+
+					charon*)
 						_PARENT_DISTRIBUTION="sid"
 						;;
 				esac
@@ -222,7 +226,7 @@ Mirror ()
 	then
 		case "${_MODE}" in
 			debian)
-				db_set lxc-debconfig/mirror http://ftp.debian.org/debian/
+				db_set lxc-debconfig/mirror http://http.debian.net/debian/
 				db_fset lxc-debconfig/mirror seen false
 				;;
 
@@ -243,7 +247,7 @@ Mirror ()
 		then
 			case "${_MODE}" in
 				debian)
-					_MIRROR="http://ftp.debian.org/debian/"
+					_MIRROR="http://http.debian.net/debian/"
 					;;
 
 				progress)
@@ -310,7 +314,7 @@ Mirror_backports ()
 	then
 		case "${_MODE}" in
 			debian)
-				db_set lxc-debconfig/mirror-backports http://backports.debian.org/debian-backports/
+				db_set lxc-debconfig/mirror-backports http://http.debian.net/debian-backports/
 				db_fset lxc-debconfig/mirror-backports seen false
 				;;
 
@@ -331,7 +335,7 @@ Mirror_backports ()
 		then
 			case "${_MODE}" in
 				debian)
-					_MIRROR_BACKPORTS="http://backports.debian.org/debian-backports/"
+					_MIRROR_BACKPORTS="http://http.debian.net/debian-backports/"
 					;;
 
 				*)

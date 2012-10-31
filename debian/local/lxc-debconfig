@@ -20,6 +20,32 @@
 ## can be found in /usr/share/common-licenses/GPL-3 file.
 
 
+Warnings ()
+{
+	case "${_DISTRIBUTION}" in
+		squeeze*|wheezy*)
+			if ! ls /usr/share/lxc/packages/live-debconfig_*.deb > /dev/null 2>&1
+			then
+
+cat << EOF
+WARNING: This version of the lxc-debconfig template requires the live-debconfig
+package to configure the container.
+
+live-debconfig is available as of Debian 8.0 (jessie).
+
+Attempting to build a container based on any older Debian release *without*
+having a local copy of live-debconfig in /usr/share/lxc/packages/ on the host
+system will fail.
+
+Press enter to continue nevertheless, or Ctrl-c to abort..
+EOF
+
+				read WAITING
+			fi
+			;;
+	esac
+}
+
 Chroot ()
 {
 	_CHROOT="${1}"
@@ -28,6 +54,7 @@ Chroot ()
 	chroot "${_CHROOT}" /usr/bin/env -i \
 		LC_ALL="C" PATH="/usr/sbin:/usr/bin:/sbin:/bin" TERM="${TERM}" \
 		DEBIAN_FRONTEND="${_DEBCONF_FRONTEND}" DEBIAN_PRIORITY="${_DEBCONF_PRIORITY}" \
+		DEBCONF_NONINTERACTIVE_SEEN="true" DEBCONF_NOWARNINGS="true" \
 		ftp_proxy="${ftp_proxy}" http_proxy="${http_proxy}" \
 		${@}
 }
@@ -270,7 +297,7 @@ EOF
 	rm -f "${_ROOTFS}/preseed.cfg"
 
 	# Run live-debconfig
-	Chroot "${_ROOTFS}" "DEBIAN_FRONTEND=dialog DEBIAN_PRIORITY=high live-debconfig"
+	Chroot "${_ROOTFS}" "DEBIAN_FRONTEND=${_DEBCONF_FRONTEND:-dialog} DEBIAN_PRIORITY=${_DEBCONF_PRIORITY:-high} live-debconfig"
 
 	# Install additional packages
 	if [ -n "${_PACKAGES}" ]
@@ -295,6 +322,15 @@ EOF
 			echo "P: Setting root password to ${_ROOT_PASSWORD}"
 			;;
 	esac
+
+	if ls /usr/share/lxc/includes/* > /dev/null 2>&1
+	then
+		cd /usr/share/lxc/includes
+
+		find . | cpio -dmpu --no-preserve-owner "${_ROOTFS}"
+
+		cd "${OLDPWD}"
+	fi
 
 	if [ -n "${_LATE_COMMAND}" ]
 	then
@@ -713,6 +749,7 @@ EOF
 	# Adding network configuration
 	for _NUMBER in $(seq 0 ${LXC_DEBCONFIG_ETH_NUMBER})
 	do
+		eval _METHOD="$`echo LXC_DEBCONFIG_ETH${_NUMBER}_METHOD`"
 		eval _COMMENT="$`echo LXC_DEBCONFIG_ETH${_NUMBER}_COMMENT`"
 		eval _BRIDGE="$`echo LXC_DEBCONFIG_ETH${_NUMBER}_BRIDGE`"
 		eval _MAC="$`echo LXC_DEBCONFIG_ETH${_NUMBER}_MAC`"
@@ -733,6 +770,14 @@ cat >> "${_PATH}/config" << EOF
 ## Network
 EOF
 
+		fi
+
+		if [ "${_METHOD}" = "none" ]
+		then
+			echo "lxc.network.type                        = empty" >> "${_PATH}/config"
+
+			_NUMBER="$((${_NUMBER} + 1))"
+			continue
 		fi
 
 cat >> "${_PATH}/config" << EOF
@@ -954,6 +999,8 @@ done
 
 # Read-in configuration from debconf
 . "${_TMPDIR}/debconf.default"
+
+Warnings
 
 Install_system "${_ROOTFS}"
 

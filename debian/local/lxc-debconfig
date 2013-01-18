@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ## lxc-debconfig - LXC template for Debian and Debian Derivatives
-## Copyright (C) 2006-2012 Daniel Baumann <daniel.baumann@progress-technologies.net>
+## Copyright (C) 2006-2013 Daniel Baumann <daniel.baumann@progress-technologies.net>
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -22,10 +22,12 @@
 
 Warnings ()
 {
-	case "${_DISTRIBUTION}" in
-		squeeze*|wheezy*)
-			if ! ls /usr/share/lxc/packages/live-debconfig_*.deb > /dev/null 2>&1
-			then
+	case "${LXC_DEBCONFIG_WITH_LIVE_DEBCONFIG}" in
+		true)
+			case "${_DISTRIBUTION}" in
+				squeeze*|wheezy*)
+					if ! ls /usr/share/lxc/packages/live-debconfig_*.deb > /dev/null 2>&1
+					then
 
 cat << EOF
 WARNING: This version of the lxc-debconfig template requires the live-debconfig
@@ -40,8 +42,10 @@ system will fail.
 Press enter to continue nevertheless, or Ctrl-c to abort..
 EOF
 
-				read WAITING
-			fi
+						read WAITING
+					fi
+					;;
+			esac
 			;;
 	esac
 }
@@ -257,22 +261,33 @@ EOF
 		Chroot "${_ROOTFS}" "DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=criticial dpkg-reconfigure tzdata"
 	fi
 
-	# Install live-debconfig
-	if ls /usr/share/lxc/packages/live-debconfig_*.deb > /dev/null 2>&1
-	then
-		# Install local live-debconfig package
-		cp -L /usr/share/lxc/packages/live-debconfig_*.deb "${_ROOTFS}"
-		Chroot "${_ROOTFS}" "dpkg -i $(basename ${_ROOTFS}/live-debconfig_*.deb)"
-		rm -f "${_ROOTFS}"/live-debconfig_*.deb
-	else
-		# Install remote live-debconfig package
-		Chroot "${_ROOTFS}" "apt-get install --yes live-debconfig"
-	fi
+	case "${LXC_DEBCONFIG_WITH_LIVE_DEBCONFIG}" in
+		true)
+			# Install live-debconfig
+			if ls /usr/share/lxc/packages/live-debconfig_*.deb > /dev/null 2>&1
+			then
+				# Install local live-debconfig package
+				cp -L /usr/share/lxc/packages/live-debconfig_*.deb "${_ROOTFS}"
+				Chroot "${_ROOTFS}" "dpkg -i $(basename ${_ROOTFS}/live-debconfig_*.deb)"
+				rm -f "${_ROOTFS}"/live-debconfig_*.deb
+			else
+				# Install remote live-debconfig package
+				Chroot "${_ROOTFS}" "apt-get install --yes live-debconfig"
+			fi
 
-	# Preseed live-debconfig
+			# Preseed live-debconfig
+			_SCRIPTS=""
+
+			for _SCRIPT in hostname ifupdown sysvinit util-linux selinux openssh-server
+			do
+				_SCRIPTS="${_SCRIPTS} /lib/live/debconfig/$(basename ${_ROOTFS}/lib/live/debconfig/????-${_SCRIPT}),"
+			done
+
+			_SCRIPTS="$(echo ${_SCRIPTS} | sed -e 's|,$||')"
+
 cat > "${_ROOTFS}/preseed.cfg" << EOF
 # multiselect
-live-debconfig live-debconfig/multiselect multiselect hostname, ifupdown, sysvinit, util-linux, selinux, openssh-server
+live-debconfig live-debconfig/scripts multiselect ${_SCRIPTS}
 
 # passwd
 live-debconfig live-debconfig/passwd/root-password string ${_ROOT_PASSWORD}
@@ -291,20 +306,30 @@ live-debconfig live-debconfig/util-linux/hwclockaccess boolean false
 live-debconfig live-debconfig/selinux/enable boolean false
 EOF
 
-	if [ -e "${_PRESEED_FILE}" ]
-	then
-		grep -E '^ *live-debconfig' "${_PRESEED_FILE}" >> "${_ROOTFS}/preseed.cfg"
-	fi
+			if [ -e "${_PRESEED_FILE}" ]
+			then
+				grep -E '^ *live-debconfig' "${_PRESEED_FILE}" >> "${_ROOTFS}/preseed.cfg"
+			fi
 
-	# Apply preseed information
-	Chroot "${_ROOTFS}" "live-debconfig-set-selections preseed.cfg"
+			# Apply preseed information
+			Chroot "${_ROOTFS}" "live-debconfig-set-selections preseed.cfg"
 
-	rm -f "${_ROOTFS}/preseed.cfg"
+			rm -f "${_ROOTFS}/preseed.cfg"
 
-	# Run live-debconfig
-	Chroot "${_ROOTFS}" "DEBIAN_FRONTEND=${_DEBCONF_FRONTEND:-dialog} DEBIAN_PRIORITY=${_DEBCONF_PRIORITY:-high} live-debconfig --debconfig"
+			# Run live-debconfig
+			Chroot "${_ROOTFS}" "DEBIAN_FRONTEND=${_DEBCONF_FRONTEND:-dialog} DEBIAN_PRIORITY=${_DEBCONF_PRIORITY:-high} live-debconfig"
+			;;
+	esac
 
-	# Install additional packages
+	# FIXME: Install additional packages after live-debconfig has been run.
+	# This is suboptimal, ideally we should install all packages but not run the maintainer scripts,
+	# then run live-debconfig, and run the maintainer scripts. This way, live-debconfig would see
+	# all the installed packages and could skip those scripts entirely when a certain package is not
+	# installed. Unfortunately, that is not possible in any reasonable way with apt-get.
+	# FTR: The only known workaround for now would be to first apt-get install --download-only all
+	# packages, then unpack them with dpkg, run live-debconfig, and dpkg --configure them.
+	# For the time being, it's better to have live-debconfig see no packages at all and be run before
+	# packages are installed, than the other way around.
 	if [ -n "${_PACKAGES}" ]
 	then
 		Chroot "${_ROOTFS}" "apt-get --yes install ${_PACKAGES}"
@@ -664,7 +689,11 @@ lxc.cgroup.devices.allow                = b *:* m
 # /dev/console
 lxc.cgroup.devices.allow                = c 5:1 rwm
 # /dev/fuse
-lxc.cgroup.devices.allow                = c 10:229 rwm
+#lxc.cgroup.devices.allow               = c 10:229 rwm
+# /dev/loop*
+#lxc.cgroup.devices.allow               = b 7:* rwm
+# /dev/loop-control
+#lxc.cgroup.devices.allow               = c 10:237 rwm
 # /dev/null
 lxc.cgroup.devices.allow                = c 1:3 rwm
 # /dev/ptmx
@@ -789,6 +818,15 @@ EOF
 
 		if [ -n "${_VETH}" ]
 		then
+			if [ $(echo ${_VETH} | wc -c) -gt 16 ]
+			then
+				_VETH_OLD="${_VETH}"
+				_VETH="$(echo ${_VETH} | cut -b 1-15)"
+
+				echo "W: veth names must be maximum 15 characters long (IFNAMSIZ limit on linux)."
+				echo "I: Automatically shortening ${_VETH_OLD} to ${_VETH}."
+			fi
+
 			echo "lxc.network.veth.pair                   = ${_VETH}" >> "${_PATH}/config"
 		fi
 
@@ -846,6 +884,14 @@ Usage ()
 
 	return 0
 }
+
+for _CONFFILE in /etc/default/lxc /etc/default/lxc.d/*
+do
+	if [ -e "${_CONFFILE}" ]
+	then
+		. "${_CONFFILE}" || true
+	fi
+done
 
 _OPTIONS="$(getopt -o d:hp:n:c -l apt-recommends:,debconf-frontend:,debconf-priority:,distribution:,preseed-file:,help,path:,name:,clean -- "$@")"
 

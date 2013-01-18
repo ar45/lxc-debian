@@ -1,7 +1,7 @@
 #!/bin/sh
 
 ## lxc-debconfig - LXC template for Debian and Debian Derivatives
-## Copyright (C) 2006-2012 Daniel Baumann <daniel.baumann@progress-technologies.net>
+## Copyright (C) 2006-2013 Daniel Baumann <daniel.baumann@progress-technologies.net>
 ##
 ## This program comes with ABSOLUTELY NO WARRANTY; for details see COPYING.
 ## This is free software, and you are welcome to redistribute it
@@ -144,7 +144,16 @@ Archives ()
 						db_subst lxc-debconfig/archives CHOICES "Debian Security, Debian Updates, Debian Backports, Debian Proposed Updates"
 						db_subst lxc-debconfig/archives CHOICES_C "${_DISTRIBUTION}-security, ${_DISTRIBUTION}-updates, ${_DISTRIBUTION}-backports, ${_DISTRIBUTION}-proposed-updates"
 
-						db_set lxc-debconfig/archives "${_DISTRIBUTION}-security, ${_DISTRIBUTION}-updates, ${_DISTRIBUTION}-backports"
+						case "${_PARENT_DISTRIBUTION}" in
+							wheezy)
+								db_set lxc-debconfig/archives "${_DISTRIBUTION}-security, ${_DISTRIBUTION}-updates"
+								;;
+
+							*)
+								db_set lxc-debconfig/archives "${_DISTRIBUTION}-security, ${_DISTRIBUTION}-updates, ${_DISTRIBUTION}-backports"
+								;;
+						esac
+
 						db_fset lxc-debconfig/archives seen false
 						;;
 				esac
@@ -828,6 +837,11 @@ Auto ()
 
 Internal_options ()
 {
+	if dbg_get lxc-debconfig/lxc-debconfig-with-live-debconfig
+	then
+		LXC_DEBCONFIG_WITH_LIVE_DEBCONFIG="${RET}" # boolean
+	fi
+
 	if db_get lxc-debconfig/apt-recommends
 	then
 		_APT_RECOMMENDS="${RET}" # boolean (w/ empty)

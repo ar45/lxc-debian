@@ -354,12 +354,22 @@ EOF
 
 	if [ -n "${_LATE_COMMAND}" ]
 	then
-		Chroot "${_ROOTFS}" "${_LATE_COMMAND}"
+		echo "${_LATE_COMMAND}" > "${_ROOTFS}/.late-command"
+
+		Chroot "${_ROOTFS}" "sh /.late-command"
+
+		rm -f "${_ROOTFS}/.late-command"
 	fi
 
 	if [ -n "${_LATE_HOST_COMMAND}" ]
 	then
-		${_LATE_HOST_COMMAND}
+		echo "${_LATE_HOST_COMMAND}" > "${_ROOTFS}/.late-host-command"
+
+		cd "${_ROOTFS}"
+		sh "${_ROOTFS}/.late-host-command"
+		cd "${OLDPWD}"
+
+		rm -f "${_ROOTFS}/.late-host-command"
 	fi
 
 	Cleanup_system "${_ROOTFS}"
@@ -537,6 +547,7 @@ EOF
 
 				Chroot "${_CACHE}/${_DISTRIBUTION}_${_ARCHITECTURE}.partial" "apt-key add key.asc"
 				rm -f "${_CACHE}/${_DISTRIBUTION}_${_ARCHITECTURE}.partial/key.asc"
+				rm -f "${_CACHE}/${_DISTRIBUTION}_${_ARCHITECTURE}.partial/key.asc.sig"
 			done
 
 			Chroot "${_CACHE}/${_DISTRIBUTION}_${_ARCHITECTURE}.partial" "apt-get update"
@@ -746,9 +757,11 @@ case "${_MODE}" in
 		;;
 esac
 
+_SYSFS_OPTIONS="ro"
+
 cat >> "${_PATH}/config" << EOF
 lxc.mount.entry                         = proc proc proc ${_PROC_OPTIONS} 0 0
-lxc.mount.entry                         = sysfs sys sysfs defaults,ro 0 0
+lxc.mount.entry                         = sysfs sys sysfs ${_SYSFS_OPTIONS} 0 0
 EOF
 
 	# Adding preseeded mount entries
@@ -778,9 +791,11 @@ EOF
 		if [ -d "/srv/share/${_NAME}" ]
 		then
 			echo "lxc.mount.entry                         = /srv/share/${_NAME} ${_ROOTFS}/srv/${_NAME} none defaults,bind 0 0" >> "${_PATH}/config"
+			mkdir -p "${_ROOTFS}/srv/${_NAME}"
 		elif [ -d "/srv/${_NAME}" ]
 		then
 			echo "lxc.mount.entry                         = /srv/${_NAME} ${_ROOTFS}/srv/${_NAME} none defaults,bind 0 0" >> "${_PATH}/config"
+			mkdir -p "${_ROOTFS}/srv/${_NAME}"
 		elif [ -d "/srv/share" ]
 		then
 			echo "#lxc.mount.entry                        = /srv/share/${_NAME} ${_ROOTFS}/srv/${_NAME} none defaults,bind 0 0" >> "${_PATH}/config"

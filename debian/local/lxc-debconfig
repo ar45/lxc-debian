@@ -258,10 +258,12 @@ EOF
 		rm -f "${_ROOTFS}/preseed.cfg"
 	fi
 
-	# Reconfigure tzdata
 	# FIXME: All packages of priority of essential need to be reconfigured to reflect choices from preseeding
+
+	# Manual hack to workaround broken preseeding in tzdata package
 	if grep -qs tzdata "${_PRESEED_FILE}"
 	then
+		rm -f "${_ROOTFS}/etc/timezone"
 		Chroot "${_ROOTFS}" "DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=criticial dpkg-reconfigure tzdata"
 	fi
 
@@ -817,8 +819,15 @@ EOF
 			echo "lxc.mount.entry                         = ${_ENTRY}" >> "${_PATH}/config"
 
 			# Create directories
-			_DIRECTORIES="$(echo ${_ENTRY} | awk '{ print $1, $2 }')"
-			mkdir -p ${_DIRECTORIES}
+			_SOURCE="$(echo ${_ENTRY} | awk '{ print $1 }')"
+			_TARGET="$(echo ${_ENTRY} | awk '{ print $2 }')"
+
+			if [ -f "${_SOURCE}" ]
+			then
+				mkdir -p "$(dirname ${_TARGET})"
+			else
+				mkdir -p "${_TARGET}"
+			fi
 		fi
 	done
 

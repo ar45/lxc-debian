@@ -1,14 +1,13 @@
-lxc (0.9.0~alpha3-2+deb8u1) unstable; urgency=low
+lxc (0.9.0~rc1-1) experimental; urgency=low
 
-  * Apparently there have been users complaining to Lucas Nussbaum <lucas@debian.org>
-    about local debian (template) additions being 'too complex', and upstream doesn't
-    like any of the debian additions at all anyway.
-    Therefore, for now, dropping all debian additions and keeping them in experimental
-    only for the time being.
-    That way, this lxc package consists of pure upstream stuff only and hopefully nobody
-    will need to complain about debians lxc package anymore.
+  * Merging upstream version 0.9.0~rc1.
+  * Using lxc.functions in local lxc tools.
+  * Updating version numbers in example preseed files.
+  * Refreshing local manpages.
+  * Updating progress-linux archive references.
+  * Updating todo file.
 
- -- Daniel Baumann <mail@daniel-baumann.ch>  Sat, 17 Aug 2013 16:15:36 +0200
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Fri, 22 Mar 2013 13:26:17 +0100
 
 lxc (0.9.0~alpha3-2) unstable; urgency=low
 

@@ -24,6 +24,16 @@ PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 
 . /lib/lsb/init-functions
 
+for _CONFFILE in /etc/default/lxc /etc/default/lxc.d/*
+do
+	if [ -e /etc/default/lxc ]
+	then
+		. /etc/default/lxc || true
+	fi
+done
+
+LXC_AUTO="${LXC_AUTO:-true}"
+
 Lxc ()
 {
 	_PROGRAM="${1}"
@@ -34,6 +44,9 @@ Lxc ()
 	# no containers available
 	if ! ls /etc/lxc/auto/* > /dev/null 2>&1
 	then
+		log_progress_msg "(none)"
+		log_end_msg 0
+
 		exit 0
 	fi
 
@@ -42,6 +55,8 @@ Lxc ()
 		if [ -L "${_CONFIG}" ] && [ ! -e "${_CONFIG}" ]
 		then
 			# dangling symlink
+			log_progress_msg "$(basename ${_CONFIG}) (broken)"
+
 			continue
 		fi
 
@@ -49,18 +64,30 @@ Lxc ()
 
 		case "${_PROGRAM}" in
 			start)
+				# initscript is disabled
+				case "${LXC_AUTO}" in
+					false)
+						log_progress_msg "(disabled)"
+						log_end_msg 0
+
+						exit 0
+						;;
+				esac
+
 				if ! lxc-info -n ${_CONTAINER} 2>&1 | grep -qs "RUNNING"
 				then
 					log_progress_msg "${_CONTAINER}"
 
 					lxc-start -n ${_CONTAINER} -f ${_CONFIG} -d ${_OPTIONS}
+				else
+					log_progress_msg "${_CONTAINER} (skip)"
 				fi
 				;;
 
 			*)
 				log_progress_msg "${_CONTAINER}"
 
-				lxc-${_PROGRAM} -n ${_CONTAINER} ${_OPTIONS}
+				lxc ${_PROGRAM} ${_CONTAINER} ${_OPTIONS}
 				;;
 		esac
 	done
@@ -98,6 +125,10 @@ case "${1}" in
 		log_daemon_msg "Unfreezing Linux Containers"
 
 		Lxc unfreeze
+		;;
+
+	status)
+		lxc-list
 		;;
 
 	*)

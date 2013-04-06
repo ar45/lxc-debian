@@ -137,7 +137,7 @@ Archives ()
 						db_subst lxc-debconfig/archives CHOICES_C "${_DISTRIBUTION}-security, ${_DISTRIBUTION}-updates, ${_DISTRIBUTION}-backports, ${_DISTRIBUTION}-proposed-updates"
 
 						case "${_PARENT_DISTRIBUTION}" in
-							wheezy)
+							jessie|sid)
 								db_set lxc-debconfig/archives "${_DISTRIBUTION}-security, ${_DISTRIBUTION}-updates"
 								;;
 
@@ -323,8 +323,17 @@ Mirror_backports ()
 	then
 		case "${_MODE}" in
 			debian)
-				db_set lxc-debconfig/mirror-backports http://http.debian.net/debian-backports/
-				db_fset lxc-debconfig/mirror-backports seen false
+				case "${_DISTRIBUTION}" in
+					squeeze)
+						db_set lxc-debconfig/mirror-backports http://http.debian.net/debian-backports/
+						db_fset lxc-debconfig/mirror-backports seen false
+						;;
+
+					*)
+						db_set lxc-debconfig/mirror-backports http://http.debian.net/debian/
+						db_fset lxc-debconfig/mirror-backports seen true
+						;;
+				esac
 				;;
 
 			*)
@@ -344,7 +353,15 @@ Mirror_backports ()
 		then
 			case "${_MODE}" in
 				debian)
-					_MIRROR_BACKPORTS="http://http.debian.net/debian-backports/"
+					case "${_DISTRIBUTION}" in
+						squeeze)
+							_MIRROR_BACKPORTS="http://http.debian.net/debian-backports/"
+							;;
+
+						*)
+							_MIRROR_BACKPORTS="http://http.debian.net/debian/"
+							;;
+					esac
 					;;
 
 				*)
@@ -455,8 +472,17 @@ Parent_mirror_backports ()
 	then
 		case "${_MODE}" in
 			progress-linux)
-				db_set lxc-debconfig/parent-mirror-backports http://backports.debian.org/debian-backports/
-				db_fset lxc-debconfig/parent-mirror-backports seen false
+				case "${_PARENT_DISTRIBUTION}" in
+					squeeze)
+						db_set lxc-debconfig/parent-mirror-backports http://backports.debian.org/debian-backports/
+						db_fset lxc-debconfig/parent-mirror-backports seen false
+						;;
+
+					*)
+						db_set lxc-debconfig/parent-mirror-backports ${_PARENT_MIRROR}
+						db_fset lxc-debconfig/parent-mirror-backports seen true
+						;;
+				esac
 
 				db_settitle lxc-debconfig/title
 				db_input high lxc-debconfig/parent-mirror-backports || true
@@ -476,7 +502,15 @@ Parent_mirror_backports ()
 		then
 			case "${_MODE}" in
 				progress-linux)
-					_PARENT_MIRROR_BACKPORTS="http://backports.debian.org/debian-backports/"
+					case "${_PARENT_DISTRIBUTION}" in
+						squeeze)
+							_PARENT_MIRROR_BACKPORTS="http://backports.debian.org/debian-backports/"
+							;;
+
+						*)
+							_PARENT_MIRROR_BACKPORTS="${_PARENT_MIRROR}"
+							;;
+					esac
 					;;
 
 				*)
@@ -861,6 +895,32 @@ Internal_options ()
 	_INITSYSTEM="${_INITSYSTEM:-sysvinit}"
 
 	echo "_INITSYSTEM=\"${_INITSYSTEM}\"" >> "${_TMPDIR}/debconf.default"
+
+	if db_get lxc-debconfig/mount-proc/entry
+	then
+		LXC_DEBCONFIG_MOUNT_PROC_ENTRY="${RET}"
+	fi
+
+	case "${_MODE}" in
+		progress-linux)
+			LXC_DEBCONFIG_MOUNT_PROC_ENTRY="${LXC_DEBCONFIG_MOUNT_PROC_ENTRY:-proc proc proc ro,nodev,noexec,nosuid,hidepid=2 0 0}"
+			;;
+
+		*)
+			LXC_DEBCONFIG_MOUNT_PROC_ENTRY="${LXC_DEBCONFIG_MOUNT_PROC_ENTRY:-proc proc proc ro,nodev,noexec,nosuid 0 0}"
+			;;
+	esac
+
+	echo "LXC_DEBCONFIG_MOUNT_PROC_ENTRY=\"${LXC_DEBCONFIG_MOUNT_PROC_ENTRY}\"" >> "${_TMPDIR}/debconf.default"
+
+	if db_get lxc-debconfig/mount-sysfs/entry
+	then
+		LXC_DEBCONFIG_MOUNT_SYSFS_ENTRY="${RET}"
+	fi
+
+	LXC_DEBCONFIG_MOUNT_SYSFS_ENTRY="${LXC_DEBCONFIG_MOUNT_SYSFS_ENTRY:-sysfs sys sysfs ro 0 0}"
+
+	echo "LXC_DEBCONFIG_MOUNT_SYSFS_ENTRY=\"${LXC_DEBCONFIG_MOUNT_SYSFS_ENTRY}\"" >> "${_TMPDIR}/debconf.default"
 
 	_NUMBER="0"
 

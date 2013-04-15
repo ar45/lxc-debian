@@ -832,6 +832,14 @@ EOF
 			;;
 	esac
 
+	case "${_INITSYSTEM}" in
+		systemd)
+			LXC_DEBCONFIG_MOUNT_SYSFS_ENTRY="none"
+			;;
+		*)
+			;;
+	esac
+
 	case "${LXC_DEBCONFIG_MOUNT_SYSFS_ENTRY}" in
 		none)
 			;;
@@ -887,6 +895,15 @@ EOF
 			echo "#lxc.mount.entry                        = /srv/${_NAME} ${_ROOTFS}/srv/${_NAME} none defaults,bind 0 0" >> "${_PATH}/config"
 		fi
 	fi
+
+	case "${_INITSYSTEM}" in
+		systemd)
+			echo "lxc.hook.pre-start                      = /usr/share/lxc/hooks/systemd-host" >> "${_PATH}/config"
+			echo "lxc.hook.mount                          = /srv/share/share/lxc/hooks/systemd-container" >> "${_PATH}/config"
+			;;
+		*)
+			;;
+	esac
 
 	# Adding network configuration
 	for _NUMBER in $(seq 0 ${LXC_DEBCONFIG_ETH_NUMBER})

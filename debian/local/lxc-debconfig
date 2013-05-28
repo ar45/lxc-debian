@@ -228,7 +228,7 @@ EOF
 
 	Upgrade_system "${_ROOTFS}"
 
-	# Temporary hack for base-files (FIXME)
+	# Temporary hack for base-files
 	for _FILE in motd.tail motd profile
 	do
 		if [ -e "${_ROOTFS}/usr/share/base-files/${_FILE}" ]
@@ -238,8 +238,26 @@ EOF
 		fi
 	done
 
-	rm -f ${_ROOTFS}/etc/dpkg/origins/default
-	Chroot "${_ROOTFS}" "dpkg-reconfigure base-files"
+	# Temporary hack for dpkg
+	if [ -e "${_ROOTFS}/etc/dpkg/origins/default" ]
+	then
+		rm -f "${_ROOTFS}/etc/dpkg/origins/default"
+		Chroot "${_ROOTFS}" "dpkg-reconfigure base-files"
+	fi
+
+	# Temporary hack for readline
+	if [ -e "${_ROOTFS}/etc/inputrc" ]
+	then
+		rm -f "${_ROOTFS}/etc/inputrc"
+		cp "${_ROOTFS}/usr/share/readline/inputrc" "${_ROOTFS}/etc"
+	fi
+
+	# Temporary hack for sysvinit
+	if [ -e "${_ROOTFS}/etc/inittab" ]
+	then
+		rm -f "${_ROOTFS}/etc/inittab"
+		cp "${_ROOTFS}/usr/share/sysvinit/inittab" "${_ROOTFS}/etc/inittab"
+	fi
 
 	# Removing hostname
 	rm -f "${_ROOTFS}"/etc/hostname
@@ -313,7 +331,7 @@ EOF
 
 			rm -f "${_ROOTFS}/preseed.cfg"
 
-			# Run live-debconfig
+			# Run live-debconfig (first pass)
 			Chroot "${_ROOTFS}" "DEBIAN_FRONTEND=${_DEBCONF_FRONTEND:-dialog} DEBIAN_PRIORITY=${_DEBCONF_PRIORITY:-high} live-debconfig"
 			;;
 	esac
@@ -327,6 +345,7 @@ EOF
 	# packages, then unpack them with dpkg, run live-debconfig, and dpkg --configure them.
 	# For the time being, it's better to have live-debconfig see no packages at all and be run before
 	# packages are installed, than the other way around.
+	# Workaround: We're running live-debconfig at the end of the template again.
 	if [ -n "${_PACKAGES}" ]
 	then
 		case "${_DEBCONF_FRONTEND}" in
@@ -356,6 +375,12 @@ EOF
 		find . | cpio -dmpu --no-preserve-owner "${_ROOTFS}"
 
 		cd "${OLDPWD}"
+	fi
+
+	# Run live-debconfig (second pass)
+	if [ -x "${_ROOTFS}/bin/live-debconfig" ]
+	then
+		Chroot "${_ROOTFS}" "DEBIAN_FRONTEND=${_DEBCONF_FRONTEND:-dialog} DEBIAN_PRIORITY=${_DEBCONF_PRIORITY:-high} live-debconfig"
 	fi
 
 	if [ -n "${_LATE_COMMAND}" ]
@@ -781,6 +806,18 @@ EOF
 
 cat >> "${_PATH}/config" << EOF
 ## Devices
+EOF
+
+	case "${_INITSYSTEM}" in
+		systemd)
+			echo "lxc.autodev                             = 1" >> "${_PATH}/config"
+			;;
+		*)
+			echo "lxc.autodev                             = 0" >> "${_PATH}/config"
+			;;
+	esac
+
+cat >> "${_PATH}/config" << EOF
 # Allow all devices
 #lxc.cgroup.devices.allow               = a
 # Deny all devices
@@ -791,8 +828,14 @@ lxc.cgroup.devices.allow                = b *:* m
 
 # /dev/console
 lxc.cgroup.devices.allow                = c 5:1 rwm
+# /dev/full
+lxc.cgroup.devices.allow                = c 1:7 rwm
 # /dev/fuse
 #lxc.cgroup.devices.allow               = c 10:229 rwm
+# /dev/hpet
+#lxc.cgroup.devices.allow               = c 10:228 rwm
+# /dev/kvm
+#lxc.cgroup.devices.allow               = c 10:232 rwm
 # /dev/loop*
 #lxc.cgroup.devices.allow               = b 7:* rwm
 # /dev/loop-control
@@ -806,7 +849,7 @@ lxc.cgroup.devices.allow                = c 136:* rwm
 # /dev/random
 lxc.cgroup.devices.allow                = c 1:8 rwm
 # /dev/rtc
-lxc.cgroup.devices.allow                = c 254:0 rwm
+lxc.cgroup.devices.allow                = c 254:0 rm
 # /dev/tty
 lxc.cgroup.devices.allow                = c 5:0 rwm
 # /dev/urandom

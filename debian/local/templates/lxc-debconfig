@@ -524,7 +524,7 @@ Acquire::PDiffs "false";
 // Acquire::Language "none";
 APT::Clean-Installed "true";
 APT::Get:AutomaticRemove "true";
-APT::Get::HideAutoRemove "false";
+APT::Get:HideAutoRemove "false";
 APT::Get:Show-Upgraded "true";
 APT::Install-Recommends "false";
 EOF
@@ -712,6 +712,11 @@ Copy_system ()
 				Chroot "${_ROOTFS}" "apt-key add $(basename ${_KEY})"
 				rm -f "${_ROOTFS}/$(basename ${_KEY})"
 			done
+		fi
+
+		if ls "${_TMPDIR}/sources.list.d"/*.pref > /dev/null 2>&1
+		then
+			cp "${_TMPDIR}/sources.list.d"/*.pref "${_ROOTFS}/etc/apt/preferences.d"
 		fi
 
 		Upgrade_system "${_ROOTFS}"

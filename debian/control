@@ -5,7 +5,6 @@ Maintainer: Daniel Baumann <mail@daniel-baumann.ch>
 Uploaders: Jonas Genannt <jonas.genannt@capi2name.de>
 Build-Depends:
  debhelper (>= 9),
- dh-autoreconf,
  autotools-dev,
  docbook2x,
  libapparmor-dev,
@@ -31,7 +30,6 @@ Suggests:
  gpgv,
  debian-keyring,
  rsync,
-Conflicts: cgroup-bin
 Description: Linux Containers userspace tools
  Containers are insulated areas inside a system, which have their own namespace
  for filesystem, network, PID, IPC, CPU and memory allocation and which can be

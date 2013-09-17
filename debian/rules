@@ -5,7 +5,7 @@ SHELL := sh -e
 DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
 
 %:
-	dh ${@} --with autotools_dev
+	dh ${@} --with autoreconf,autotools_dev
 
 override_dh_auto_configure:
 	dh_auto_configure -- --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH)/lxc --libexecdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) --with-distro=debian --with-rootfs-path=\$${prefix}/lib/$(DEB_HOST_MULTIARCH)/lxc --enable-doc --enable-configpath-log
@@ -30,7 +30,7 @@ override_dh_auto_install:
 	cp debian/local/lxc-all debian/lxc/usr/bin
 	cp debian/local/lxc-backup debian/lxc/usr/bin
 	cp debian/local/lxc-halt debian/lxc/usr/bin
-	cp debian/local/lxc-list debian/lxc/usr/bin
+	cp debian/local/lxc-list debian/lxc/usr/bin/lxc-list.old
 	cp debian/local/lxc-ls debian/lxc/usr/bin
 	cp debian/local/lxc-restore debian/lxc/usr/bin
 
@@ -57,8 +57,6 @@ override_dh_auto_install:
 
 	# removing useless files
 	rm -f debian/tmp/usr/bin/lxc-ls # superseeded by local version until python-lxc is ready
-	rm -f debian/tmp/usr/share/lxc/templates/lxc-busybox # doesn't work
-	rm -f debian/tmp/usr/share/lxc/templates/lxc-lenny # doesn't work anymore since lenny EOL
 
 override_dh_builddeb:
 	dh_builddeb -- -Zxz

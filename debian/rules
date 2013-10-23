@@ -1,7 +1,5 @@
 #!/usr/bin/make -f
 
-SHELL := sh -e
-
 DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
 
 %:
@@ -57,6 +55,7 @@ override_dh_auto_install:
 
 	# removing useless files
 	rm -f debian/tmp/usr/bin/lxc-ls # superseeded by local version until python-lxc is ready
+	rm -f debian/tmp/usr/share/lxc/templates/lxc-ubuntu # currently broken
 
 override_dh_builddeb:
 	dh_builddeb -- -Zxz

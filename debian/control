@@ -9,9 +9,13 @@ Build-Depends:
  autotools-dev,
  docbook2x,
  libapparmor-dev,
+ liblua5.2-dev,
  libcap-dev,
+ libseccomp-dev,
+ libselinux-dev,
  linux-libc-dev,
  pkg-config,
+ python3-dev,
 Standards-Version: 3.9.5
 Homepage: http://linuxcontainers.org/
 Vcs-Browser: http://daniel-baumann.ch/gitweb/?p=debian/packages/lxc.git
@@ -23,9 +27,9 @@ Pre-Depends: multiarch-support
 Depends:
  ${misc:Depends},
  ${shlibs:Depends},
+ python3,
 Recommends:
  lxc-stuff,
- libcap2-bin,
  rsync,
 Description: Linux Containers userspace tools
  Containers are insulated areas inside a system, which have their own namespace
@@ -79,6 +83,7 @@ Section: libdevel
 Architecture: linux-any
 Depends:
  ${misc:Depends},
+ ${shlibs:Depends},
  lxc (= ${binary:Version}),
 Description: Linux Containers userspace tools (development)
  Containers are insulated areas inside a system, which have their own namespace

@@ -27,9 +27,10 @@ Pre-Depends: multiarch-support
 Depends:
  ${misc:Depends},
  ${shlibs:Depends},
- python3,
 Recommends:
  lxc-stuff,
+ lua5.2,
+ python3,
  rsync,
 Description: Linux Containers userspace tools
  Containers are insulated areas inside a system, which have their own namespace

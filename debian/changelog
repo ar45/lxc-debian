@@ -1,3 +1,11 @@
+lxc (0.8.0~rc1-8+deb7u2) wheezy; urgency=medium
+
+  * Non-maintainer upload.
+  * Use latest upstream provided lxc-debian that actually works. Closes: #680469
+  * Add rsync to Recommends since lxc-debian uses it.
+
+ -- Raphaël Hertzog <hertzog@debian.org>  Mon, 16 Dec 2013 08:51:43 +0100
+
 lxc (0.8.0~rc1-8+deb7u1) wheezy; urgency=low
 
   * Non-maintainer upload.

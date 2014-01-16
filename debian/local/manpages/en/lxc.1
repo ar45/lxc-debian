@@ -1,12 +1,12 @@
 .\" lxc(1) - convenience Wrapper for LXC programs
-.\" Copyright (C) 2006-2013 Daniel Baumann <mail@daniel-baumann.ch>
+.\" Copyright (C) 2006-2014 Daniel Baumann <mail@daniel-baumann.ch>
 .\"
 .\" lxc comes with ABSOLUTELY NO WARRANTY; for details see COPYING.
 .\" This is free software, and you are welcome to redistribute it
 .\" under certain conditions; see COPYING for details.
 .\"
 .\"
-.TH LXC 1 2013\-10\-29 1.0.0~alpha2-2 "Linux Containers"
+.TH LXC 1 2014\-01\-16 1.0.0~alpha3-5 "Linux Containers"
 
 .SH NAME
 \fBlxc\fR \- convenience Wrapper for LXC programs
@@ -25,7 +25,7 @@ Example (wrapper): lxc start example.org
 .IP "\fIPROGRAM\fR" 4
 specifies a program of the Linux Container tools (LXC), see \fIlxc\fR(7).
 .IP "\fICONTAINER\fR" 4
-specifies a Linux Container in the LXC path (default /var/lib/lxc).
+specifies a Linux Container in the LXC path (default /srv/lxc/containers).
 .br
 Instead of an individual container name 'all' can be used to execute a programm on all available containers (e.g. 'lxc start all -d' to start all containers in the background).
 .IP "\fIOPTIONS\fR" 4

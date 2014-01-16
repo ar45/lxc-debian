@@ -1,6 +1,6 @@
 #!/bin/sh
 
-## Copyright (C) 2006-2013 Daniel Baumann <mail@daniel-baumann.ch>
+## Copyright (C) 2006-2014 Daniel Baumann <mail@daniel-baumann.ch>
 ##
 ## This program comes with ABSOLUTELY NO WARRANTY; for details see COPYING.
 ## This is free software, and you are welcome to redistribute it
@@ -14,16 +14,6 @@ set -e
 _LXC_DIRECTORY="${lxc_path}"
 
 . /lib/lsb/init-functions
-
-for _CONFFILE in /etc/default/lxc /etc/default/lxc.d/*
-do
-	if [ -e ${_CONFFILE} ]
-	then
-		. ${_CONFFILE} || true
-	fi
-done
-
-LXC_AUTO="${LXC_AUTO:-true}"
 
 Lxc ()
 {
@@ -55,16 +45,6 @@ Lxc ()
 
 		case "${_PROGRAM}" in
 			start)
-				# initscript is disabled
-				case "${LXC_AUTO}" in
-					false)
-						log_progress_msg "(disabled)"
-						log_end_msg 0
-
-						exit 0
-						;;
-				esac
-
 				if ! lxc-info -n ${_CONTAINER} 2>&1 | grep -qs "RUNNING"
 				then
 					log_progress_msg "${_CONTAINER}"

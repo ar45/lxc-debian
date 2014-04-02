@@ -40,6 +40,11 @@ ifeq ($(DEB_VENDOR),Progress Linux)
 	mv debian/tmp/usr/share/lxc/templates/lxc-debian debian/tmp/usr/share/lxc/templates/lxc-debian.upstream
 endif
 
+	# remove lxc-top until lua-alt-getopt is available
+	rm -f debian/tmp/usr/bin/lxc-top
+	rm -f debian/tmp/usr/share/man/*/lxc-top.*
+	rm -f debian/tmp/usr/share/man/*/*/lxc-top.*
+
 override_dh_builddeb:
 	dh_builddeb -- -Zxz
 

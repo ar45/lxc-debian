@@ -1,3 +1,9 @@
+lxc (1.0.0-6) unstable; urgency=low
+
+  * Removing lxc-top until lua-alt-getopt is available.
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Wed, 02 Apr 2014 22:20:59 +0200
+
 lxc (1.0.0-5) unstable; urgency=low
 
   * Building with dh --parallel.

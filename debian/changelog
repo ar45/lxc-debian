@@ -1,3 +1,12 @@
+lxc (1.0.0-7) unstable; urgency=low
+
+  * Marking lxc/containers debconf default value as non-translatable
+    (Closes: #743473).
+  * Setting language field in French debconf translation file (Closes:
+    #743471).
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Sat, 05 Apr 2014 11:29:49 +0200
+
 lxc (1.0.0-6) unstable; urgency=low
 
   * Removing lxc-top until lua-alt-getopt is available.

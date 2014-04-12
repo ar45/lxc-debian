@@ -12,7 +12,7 @@ Build-Depends:
  libapparmor-dev,
  liblua5.2-dev,
  libcap-dev,
- libseccomp-dev,
+ libseccomp-dev [amd64 armhf i386],
  libselinux-dev,
  linux-libc-dev,
  pkg-config,

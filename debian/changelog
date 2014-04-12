@@ -1,3 +1,10 @@
+lxc (1.0.0-8) unstable; urgency=low
+
+  * Building with libseccomp on amd64, armhf, and i386 only (Closes:
+    #744295).
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Sat, 12 Apr 2014 20:33:08 +0200
+
 lxc (1.0.0-7) unstable; urgency=low
 
   * Marking lxc/containers debconf default value as non-translatable

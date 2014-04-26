@@ -1,3 +1,14 @@
+lxc (1.0.0-9) unstable; urgency=low
+
+  * Adding conflicts to libvirt-bin which messes with cgroups (Closes:
+    #745169).
+  * Adding updates Spanish debconf translations from Camaleón
+    <noelamac@gmail.com> (Closes: #744854).
+  * Configuring systemd service manually since the upstream makefile fails
+    to do that (Closes: #745670).
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Sat, 26 Apr 2014 07:47:09 +0200
+
 lxc (1.0.0-8) unstable; urgency=low
 
   * Building with libseccomp on amd64, armhf, and i386 only (Closes:

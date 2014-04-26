@@ -32,6 +32,7 @@ Recommends:
  lua5.2,
  python3,
  rsync,
+Conflicts: libvirt-bin
 Suggests: lxc-stuff
 Description: Linux Containers userspace tools
  Containers are insulated areas inside a system, which have their own namespace

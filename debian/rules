@@ -33,6 +33,12 @@ override_dh_auto_install:
 	mkdir -p debian/lxc-dev/usr/bin
 	mv debian/tmp/usr/bin/lxc-test-* debian/lxc-dev/usr/bin
 
+	# fix systemd service
+	sed -i	-e "s|/usr/libexec/lxc/lxc-devsetup|/usr/lib/$(DEB_HOST_MULTIARCH)/lxc|" \
+		-e "s|/usr/libexec/lxc/lxc-startup start|/usr/bin/lxc-autostart|" \
+		-e "s|/usr/libexec/lxc/lxc-startup stop|/usr/bin/lxc-autostart --shutdown|" \
+	debian/tmp/lib/systemd/system/lxc.service
+
 	# template
 ifeq ($(DEB_VENDOR),Progress Linux)
 	# rename lxc-debian to lxc-debian.upstream

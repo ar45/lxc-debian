@@ -303,6 +303,8 @@ out:
 	return ret;
 }
 
+static int macvlan_mode(int *valuep, const char *value);
+
 static int config_network_type(const char *key, const char *value,
 			       struct lxc_conf *lxc_conf)
 {
@@ -337,8 +339,10 @@ static int config_network_type(const char *key, const char *value,
 
 	if (!strcmp(value, "veth"))
 		netdev->type = LXC_NET_VETH;
-	else if (!strcmp(value, "macvlan"))
+	else if (!strcmp(value, "macvlan")) {
 		netdev->type = LXC_NET_MACVLAN;
+		macvlan_mode(&netdev->priv.macvlan_attr.mode, "private");
+	}
 	else if (!strcmp(value, "vlan"))
 		netdev->type = LXC_NET_VLAN;
 	else if (!strcmp(value, "phys"))
@@ -1300,13 +1304,10 @@ static int config_idmap(const char *key, const char *value, struct lxc_conf *lxc
 		goto out;
 	memset(idmap, 0, sizeof(*idmap));
 
-	idmaplist->elem = idmap;
-
-	lxc_list_add_tail(&lxc_conf->id_map, idmaplist);
-
 	ret = sscanf(value, "%c %lu %lu %lu", &type, &nsid, &hostid, &range);
 	if (ret != 4)
 		goto out;
+
 	INFO("read uid map: type %c nsid %lu hostid %lu range %lu", type, nsid, hostid, range);
 	if (type == 'u')
 		idmap->idtype = ID_TYPE_UID;
@@ -1314,9 +1315,13 @@ static int config_idmap(const char *key, const char *value, struct lxc_conf *lxc
 		idmap->idtype = ID_TYPE_GID;
 	else
 		goto out;
+
 	idmap->hostid = hostid;
 	idmap->nsid = nsid;
 	idmap->range = range;
+
+	idmaplist->elem = idmap;
+	lxc_list_add_tail(&lxc_conf->id_map, idmaplist);
 
 	return 0;
 
@@ -1940,6 +1945,40 @@ static int lxc_get_mount_entries(struct lxc_conf *c, char *retv, int inlen)
 	return fulllen;
 }
 
+static int lxc_get_auto_mounts(struct lxc_conf *c, char *retv, int inlen)
+{
+	int len, fulllen = 0;
+
+	if (!retv)
+		inlen = 0;
+	else
+		memset(retv, 0, inlen);
+
+	if (!(c->auto_mounts & LXC_AUTO_ALL_MASK))
+		return 0;
+
+	switch (c->auto_mounts & LXC_AUTO_PROC_MASK) {
+		case LXC_AUTO_PROC_MIXED:        strprint(retv, inlen, "proc:mixed\n"); break;
+		case LXC_AUTO_PROC_RW:           strprint(retv, inlen, "proc:rw");      break;
+		default: break;
+	}
+	switch (c->auto_mounts & LXC_AUTO_SYS_MASK) {
+		case LXC_AUTO_SYS_RO:            strprint(retv, inlen, "sys:ro");            break;
+		case LXC_AUTO_SYS_RW:            strprint(retv, inlen, "sys:rw");            break;
+		default: break;
+	}
+	switch (c->auto_mounts & LXC_AUTO_CGROUP_MASK) {
+		case LXC_AUTO_CGROUP_MIXED:      strprint(retv, inlen, "cgroup:mixed");      break;
+		case LXC_AUTO_CGROUP_RO:         strprint(retv, inlen, "cgroup:ro");         break;
+		case LXC_AUTO_CGROUP_RW:         strprint(retv, inlen, "cgroup:rw");         break;
+		case LXC_AUTO_CGROUP_FULL_MIXED: strprint(retv, inlen, "cgroup-full:mixed"); break;
+		case LXC_AUTO_CGROUP_FULL_RO:    strprint(retv, inlen, "cgroup-full:ro");    break;
+		case LXC_AUTO_CGROUP_FULL_RW:    strprint(retv, inlen, "cgroup-full:rw");    break;
+		default: break;
+	}
+	return fulllen;
+}
+
 /*
  * lxc.network.0.XXX, where XXX can be: name, type, link, flags, type,
  * macvlan.mode, veth.pair, vlan, ipv4, ipv6, script.up, hwaddr, mtu,
@@ -2073,6 +2112,8 @@ int lxc_get_config_item(struct lxc_conf *c, const char *key, char *retv,
 
 	if (strcmp(key, "lxc.mount.entry") == 0)
 		return lxc_get_mount_entries(c, retv, inlen);
+	else if (strcmp(key, "lxc.mount.auto") == 0)
+		return lxc_get_auto_mounts(c, retv, inlen);
 	else if (strcmp(key, "lxc.mount") == 0)
 		v = c->fstab;
 	else if (strcmp(key, "lxc.tty") == 0)
@@ -2150,6 +2191,8 @@ int lxc_clear_config_item(struct lxc_conf *c, const char *key)
 		return lxc_clear_cgroups(c, key);
 	else if (strcmp(key, "lxc.mount.entries") == 0)
 		return lxc_clear_mount_entries(c);
+	else if (strcmp(key, "lxc.mount.auto") == 0)
+		return lxc_clear_automounts(c);
 	else if (strncmp(key, "lxc.hook", 8) == 0)
 		return lxc_clear_hooks(c, key);
 	else if (strncmp(key, "lxc.group", 9) == 0)

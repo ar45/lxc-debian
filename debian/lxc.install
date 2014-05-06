@@ -6,6 +6,7 @@ usr/lib/*/lua
 usr/lib/*/lxc/lxc-*
 usr/lib/*/lxc/rootfs
 usr/lib/python*
+usr/sbin
 usr/share/doc
 usr/share/lua
 usr/share/lxc

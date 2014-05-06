@@ -27,7 +27,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <termios.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
@@ -202,7 +201,7 @@ Options :\n\
 
 int main(int argc, char *argv[])
 {
-	int err = -1;
+	int err = 1;
 	struct lxc_conf *conf;
 	char *const *args;
 	char *rcfile = NULL;
@@ -329,7 +328,7 @@ int main(int argc, char *argv[])
 	if (my_args.close_all_fds)
 		c->want_close_all_fds(c, true);
 
-	err = c->start(c, 0, args) ? 0 : -1;
+	err = c->start(c, 0, args) ? 0 : 1;
 out:
 	lxc_container_put(c);
 	return err;

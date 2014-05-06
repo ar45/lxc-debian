@@ -27,7 +27,7 @@ override_dh_auto_configure:
 		--with-init-script=sysvinit,systemd
 
 override_dh_auto_install:
-	dh_auto_install
+	dh_auto_install -- SYSTEMD_UNIT_DIR=/lib/systemd/system
 
 	# tests
 	mkdir -p debian/lxc-dev/usr/bin
@@ -60,6 +60,7 @@ override_dh_install:
 	dh_install --fail-missing
 
 override_dh_installinit:
+	dh_installinit -p lxc --onlyscripts --no-restart-on-upgrade --no-start --name lxc
 	dh_installinit -plxc-stuff --onlyscripts --no-restart-on-upgrade --no-start --name irkerhook-lxc
 
 override_dh_link:

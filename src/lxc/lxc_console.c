@@ -28,7 +28,6 @@
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
-#include <termios.h>
 #include <unistd.h>
 #include <signal.h>
 #include <libgen.h>
@@ -116,7 +115,7 @@ int main(int argc, char *argv[])
 	if (!c->may_control(c)) {
 		fprintf(stderr, "Insufficent privileges to control %s\n", my_args.name);
 		lxc_container_put(c);
-		return -1;
+		exit(EXIT_FAILURE);
 	}
 
 	if (!c->is_running(c)) {

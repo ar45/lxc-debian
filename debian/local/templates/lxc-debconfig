@@ -311,7 +311,7 @@ EOF
 	# Preseed live-debconfig
 cat > "${_ROOTFS}/preseed.cfg" << EOF
 # multiselect
-live-debconfig live-debconfig/components multiselect hostname, ifupdown, ${_INITSYSTEM}, util-linux, rsyslog, selinux, openssh-server
+live-debconfig live-debconfig/components multiselect hostname, ifupdown, ${_INITSYSTEM}, util-linux, rsyslog, openssh-server
 
 # passwd
 live-debconfig live-debconfig/passwd/root-password string ${_ROOT_PASSWORD}
@@ -329,8 +329,9 @@ live-debconfig live-debconfig/util-linux/hwclockaccess boolean false
 # rsyslog
 live-debconfig live-debconfig/rsyslog/imklog boolean false
 
-# selinux
-live-debconfig live-debconfig/selinux/enable boolean false
+# openssh-server
+live-debconfig live-debconfig/openssh-server/lxc-enable boolean true
+
 EOF
 
 	if [ -n "${_PRESEED_FILE}" ]
@@ -1192,7 +1193,8 @@ fi
 mkdir -p "${_ROOTFS}"
 
 # Get distributor from template filename
-_MODE="$(basename ${0} | sed -e 's|^lxc-||' -e 's|debconf||')"
+_MODE="$(basename ${0} | sed -e 's|^lxc-||' -e 's|debconfig||')"
+_MODE="${_MODE:-debian}"
 export _MODE
 
 # Configure local debconf

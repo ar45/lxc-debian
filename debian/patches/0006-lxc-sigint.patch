@@ -16,9 +16,9 @@ diff -Naurp lxc.orig/src/lxc/lxc_attach.c lxc/src/lxc/lxc_attach.c
  #include "arguments.h"
 @@ -231,6 +232,7 @@ int main(int argc, char *argv[])
  	if (ret < 0)
- 		return -1;
+ 		return 1;
  
 +	signal(SIGINT, SIG_IGN);
  	ret = lxc_wait_for_pid_status(pid);
  	if (ret < 0)
- 		return -1;
+ 		return 1;

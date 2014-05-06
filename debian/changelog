@@ -1,3 +1,31 @@
+lxc (1.0.3-1) unstable; urgency=low
+
+  * Merging upstream version 1.0.3.
+  * Refreshing lxc-sigint.patch.
+  * Manually passing systemd unit directory to install command since
+    upstream fails to do handle that properly.
+  * Updating lxc.install for /usr/sbin/init.lxc.
+  * Adding update-rc.d integration for sysvinit script.
+  * Adding remote_fs depends in irkerhook-lxc initscript.
+  * Adding dummy restart target in irkerhook-lxc initscript.
+  * Adding dummy force-reload target in irkerhook-lxc initscript.
+  * Correcting formating typo in copyright file.
+  * Adding lxc-stuff lintian overrides.
+  * Updating lxc lintian overrides.
+  * Adding patch to add missing shebang in lxc-patch.py.
+  * Updating preseed files for live-debconfig 4.0~alpha32-1.
+  * Don't mount fuse into the container, will fail if fuse isn't
+    installed.
+  * Correcting default mode in lxc-debconfig when being run on a plain
+    debian system.
+  * Updating manpage version and date headers.
+  * Dropping automatic enabling of selinux handling in lxc-debconfig
+    through live-debconfig.
+  * Also automatically preseed openssh-server/lxc-enable for live-
+    debconfig in lxc-debconfig.
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Tue, 06 May 2014 19:48:16 +0200
+
 lxc (1.0.0-10) unstable; urgency=low
 
   * Removing conflicts to libvirt-bin (Closes: #745169).

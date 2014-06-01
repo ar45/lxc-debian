@@ -4,10 +4,6 @@ lxc:
   * check apparmor integration
 
 lxc-stuff:
-  * get rid of lxc-initscript by re-adding the same logic to lxc wrapper itself,
-    adding --respect-auto option or something which then is called from the initscript
-    (the only difference between lxc and lxc-initscript is the fancy output and
-    that /etc/lxc/auto is checked).
   * add debconf question about ipv4 forward enabling (already in live-debconfig).
   * clear tty and enable them dynamically
   * integrate example debian packages that contain /usr/share/lxc/cache/*

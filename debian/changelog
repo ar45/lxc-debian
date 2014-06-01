@@ -1,3 +1,11 @@
+lxc (1.0.3-2) unstable; urgency=low
+
+  * Removing lxc-initscript, not needed anymore.
+  * Updating autostart handling in various tools to use lxc.start.auto.
+  * Building with graphviz (Closes: #749358).
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Sun, 01 Jun 2014 20:13:48 +0200
+
 lxc (1.0.3-1) unstable; urgency=low
 
   * Merging upstream version 1.0.3.

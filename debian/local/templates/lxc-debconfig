@@ -782,6 +782,19 @@ cat >> "${_PATH}/config" << EOF
 # ${_PATH}/config
 
 ## Container
+EOF
+
+	case "${_AUTO}" in
+		true)
+			echo "lxc.start.auto = 1" >> "${_PATH}/config"
+			;;
+
+		*)
+			echo "lxc.start.auto = 0" >> "${_PATH}/config"
+			;;
+	esac
+
+cat >> "${_PATH}/config" << EOF
 lxc.utsname = ${_NAME}
 lxc.rootfs = ${_PATH}/rootfs
 EOF
@@ -1021,16 +1034,6 @@ EOF
 
 		_NUMBER="$((${_NUMBER} + 1))"
 	done
-
-	# Remove configuration symlinks
-	rm -f /etc/lxc/auto/${_NAME} /etc/lxc/auto/${_NAME}.conf
-
-	case "${_AUTO}" in
-		true)
-			mkdir -p /etc/lxc/auto
-			ln -s ${_PATH}/config /etc/lxc/auto/${_NAME}
-			;;
-	esac
 
 	if [ "${?}" -ne 0 ]
 	then

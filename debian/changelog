@@ -1,3 +1,19 @@
+lxc (1.0.3-3) unstable; urgency=low
+
+  * Checking for kernel architecture on i386 to support creating amd64
+    systems on i386-systems-with-amd64-kernels as well (Closes: #750387).
+  * Adding initial Estonian debconf translations from Georg Kahest
+    <georg@life.ee> (Closes: #750547).
+  * Disabling dbus, signal, and ptrace in the apparmor profiles until
+    Debian has a recent enough apparmor version (#746764), thanks to
+    Intrigeri <intrigeri@debian.org> (Closes: #750107).
+  * Simplifying default bind mounts in lxc-debconfig for shared storage
+    data.
+  * Updating lxcpath variable in lxc-stuff handling of /etc/lxc/lxc.conf
+    (Closes: #750385).
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Wed, 11 Jun 2014 16:27:27 +0200
+
 lxc (1.0.3-2) unstable; urgency=low
 
   * Removing lxc-initscript, not needed anymore.

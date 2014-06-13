@@ -1,3 +1,16 @@
+lxc (1.0.4-1) unstable; urgency=low
+
+  * Adding note regarding warnings about memory.use_hierarchy in README
+    (Closes: #750029).
+  * Merging upstream version 1.0.4.
+  * Refreshing lxcinitdir.patch.
+  * Refreshing lxc-sysvinit.patch.
+  * Refreshing lsb-init-headers.patch.
+  * Refreshing lsb-init-functions.patch.
+  * Refreshing lsb-init-lock.patch.
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Fri, 13 Jun 2014 20:23:24 +0200
+
 lxc (1.0.3-3) unstable; urgency=low
 
   * Checking for kernel architecture on i386 to support creating amd64

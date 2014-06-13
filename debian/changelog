@@ -1,3 +1,11 @@
+lxc (1.0.4-2) unstable; urgency=low
+
+  [ Scott Kitterman ]
+  * Using dh-python3 and python3:Depends to generate correct python
+    depends (Closes: #748495).
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Fri, 13 Jun 2014 21:19:10 +0200
+
 lxc (1.0.4-1) unstable; urgency=low
 
   * Adding note regarding warnings about memory.use_hierarchy in README

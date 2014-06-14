@@ -1,3 +1,9 @@
+lxc (1.0.4-3) unstable; urgency=low
+
+  * Updating fixes for upstreams systemd file (Closes: #751553).
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Sat, 14 Jun 2014 12:38:56 +0200
+
 lxc (1.0.4-2) unstable; urgency=low
 
   [ Scott Kitterman ]

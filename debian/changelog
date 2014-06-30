@@ -1,3 +1,14 @@
+lxc (1.0.4-4) unstable; urgency=low
+
+  * Also dropping dac_read_search cap by default.
+  * Running subscripts with nowarnings for debconf.
+  * Overwriting resolv.conf when updating intermedate system from cache
+    with host resolv.conf, solves issues where cache is outdated or
+    network environment changed (laptops), thanks to Habegger Andreas
+    <andreas.habegger@bfh.ch>.
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Mon, 30 Jun 2014 20:10:58 +0200
+
 lxc (1.0.4-3) unstable; urgency=low
 
   * Updating fixes for upstreams systemd file (Closes: #751553).

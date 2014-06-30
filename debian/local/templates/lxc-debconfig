@@ -129,6 +129,10 @@ Configure_system ()
 {
 	_ROOTFS="${1}"
 
+	# Overwrite resolv.conf from cache with hosts resolv.conf
+	rm -f "${_ROOTFS}/etc/resolv.conf"
+	cp /etc/resolv.conf "${_ROOTFS}/etc"
+
 	# Configure apt
 	rm -f "${_ROOTFS}/etc/apt/sources.list"
 
@@ -817,12 +821,12 @@ lxc.pts = 1024
 ## Capabilities
 EOF
 
-	_CAPABILITIES="${_CAPABILITIES:-audit_control audit_write linux_immutable mac_admin mac_override setpcap sys_admin sys_module sys_pacct sys_rawio sys_time}"
+	_CAPABILITIES="${_CAPABILITIES:-audit_control audit_write dac_read_search linux_immutable mac_admin mac_override setpcap sys_admin sys_module sys_pacct sys_rawio sys_time}"
 
 	case "${_CAPABILITIES}" in
 		none)
 			_COMMENTED="#"
-			_CAPABILITIES="audit_control audit_write linux_immutable mac_admin mac_override setpcap sys_admin sys_module sys_pacct sys_rawio sys_time"
+			_CAPABILITIES="audit_control audit_write dac_read_searcj linux_immutable mac_admin mac_override setpcap sys_admin sys_module sys_pacct sys_rawio sys_time"
 			;;
 		*)
 			_COMMENTED=""

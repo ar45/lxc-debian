@@ -10,7 +10,8 @@
 
 set -e
 
-# FIXME: this whole mess should be simplified at some point
+DEBCONF_NOWARNINGS="true"
+export DEBCONF_NOWARNINGS
 
 . /usr/share/debconf/confmodule
 

@@ -1,3 +1,11 @@
+lxc (1.1.0~alpha1-1) unstable; urgency=low
+
+  * Merging upstream version 1.1.0~alpha1.
+  * Refreshing lsb-init-functions.patch.
+  * Refreshing debian-config.patch.
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Tue, 08 Jul 2014 18:45:01 +0200
+
 lxc (1.0.4-4) unstable; urgency=low
 
   * Also dropping dac_read_search cap by default.

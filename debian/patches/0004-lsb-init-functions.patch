@@ -5,7 +5,7 @@ diff -Naurp lxc.orig/config/init/sysvinit/lxc.in lxc/config/init/sysvinit/lxc.in
 --- lxc.orig/config/init/sysvinit/lxc.in
 +++ lxc/config/init/sysvinit/lxc.in
 @@ -49,8 +49,8 @@ OPTIONS=
- STOPOPTS="-a -s"
+ STOPOPTS="-a -A -s"
  
  # Source function library.
 -test ! -r "$sysconfdir"/rc.d/init.d/functions ||

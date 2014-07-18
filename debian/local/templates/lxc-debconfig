@@ -418,17 +418,6 @@ EOF
 		rm -f "${_ROOTFS}/.late-command"
 	fi
 
-	if [ -n "${_LATE_HOST_COMMAND}" ]
-	then
-		echo "${_LATE_HOST_COMMAND}" > "${_ROOTFS}/.late-host-command"
-
-		cd "${_ROOTFS}"
-		sh "${_ROOTFS}/.late-host-command"
-		cd "${OLDPWD}"
-
-		rm -f "${_ROOTFS}/.late-host-command"
-	fi
-
 	Cleanup_system "${_ROOTFS}"
 
 	return 0
@@ -816,7 +805,7 @@ EOF
 cat >> "${_PATH}/config" << EOF
 #lxc.console = /var/log/lxc/${_NAME}.console
 lxc.tty = 6
-lxc.pts = 1024
+lxc.pts = 1
 
 ## Capabilities
 EOF
@@ -972,10 +961,12 @@ EOF
 
 	case "${_INITSYSTEM}" in
 		systemd)
+			echo "lxc.hook.pre-start = /usr/share/lxc/hooks/run" >> "${_PATH}/config"
 			echo "lxc.hook.pre-start = /usr/share/lxc/hooks/systemd-host" >> "${_PATH}/config"
 			echo "lxc.hook.mount = /usr/share/lxc/hooks/systemd-container" >> "${_PATH}/config"
 			;;
 		*)
+			echo "lxc.hook.pre-start = /usr/share/lxc/hooks/run" >> "${_PATH}/config"
 			;;
 	esac
 
@@ -1016,7 +1007,18 @@ EOF
 cat >> "${_PATH}/config" << EOF
 lxc.network.type = veth
 lxc.network.flags = up
+EOF
+
+		if [ "${_MAC}" != "none" ]
+		then
+
+cat >> "${_PATH}/config" << EOF
 lxc.network.hwaddr = ${_MAC}
+EOF
+
+		fi
+
+cat >> "${_PATH}/config" << EOF
 lxc.network.link = ${_BRIDGE}
 EOF
 
@@ -1043,6 +1045,17 @@ EOF
 	then
 		echo "Failed to add configuration"
 		return 1
+	fi
+
+	if [ -n "${_LATE_HOST_COMMAND}" ]
+	then
+		echo "${_LATE_HOST_COMMAND}" > "${_ROOTFS}/.late-host-command"
+
+		cd "${_ROOTFS}"
+		sh "${_ROOTFS}/.late-host-command"
+		cd "${OLDPWD}"
+
+		rm -f "${_ROOTFS}/.late-host-command"
 	fi
 
 	return 0

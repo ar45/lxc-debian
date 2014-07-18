@@ -1,0 +1,8 @@
+#!/bin/sh
+
+set -e
+
+_CONTAINER_RUN="${LXC_ROOTFS_MOUNT}/run"
+
+# Remove /run files
+rm -rf "${_CONTAINER_RUN}"/*

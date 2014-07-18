@@ -1,3 +1,28 @@
+lxc (1.1.0~alpha1-2) unstable; urgency=low
+
+  [ Daniel Baumann ]
+  * Adding pre-start hook to remove /run files within container.
+
+  [ Nik Lutz ]
+  * Mount a tmpfs on containers /run and /dev/shm directories, newer
+    systemd (jessie/wheezy-backports) require these directories to be
+    mountpoints.
+
+  [ Daniel Baumann ]
+  * Ordering mountpoints in systemd-container hook.
+
+  [ Nik Lutz ]
+  * Moving execution of late-host-command from Configure_system() to
+    Copy_configuration() to be able to adjust the config file via late-
+    host-command.
+
+  [ Daniel Baumann ]
+  * Trimming lxc.pts in lxc-debconfig.
+  * Allowing mac values to be set to none in lxc-debconfig in order to not
+    set any mac address in config.
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Fri, 18 Jul 2014 09:57:50 +0200
+
 lxc (1.1.0~alpha1-1) unstable; urgency=low
 
   * Merging upstream version 1.1.0~alpha1.

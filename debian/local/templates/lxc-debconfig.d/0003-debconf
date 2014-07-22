@@ -71,7 +71,7 @@ Parent_distribution ()
 						;;
 
 					cairon*)
-						_PARENT_DISTRIBUTION="sid"
+						_PARENT_DISTRIBUTION="jessie"
 						;;
 				esac
 				;;
@@ -140,12 +140,16 @@ Archives ()
 						;;
 
 					*)
-						db_subst lxc-debconfig/archives CHOICES "Security, Updates, Backports, Proposed Updates"
+						db_subst lxc-debconfig/archives CHOICES "Security, Updates, LTS, Backports, Proposed Updates"
 						db_subst lxc-debconfig/archives CHOICES_C "${_DISTRIBUTION}-security, ${_DISTRIBUTION}-updates, ${_DISTRIBUTION}-backports, ${_DISTRIBUTION}-proposed-updates"
 
 						case "${_PARENT_DISTRIBUTION}" in
-							jessie|sid)
-								db_set lxc-debconfig/archives "${_DISTRIBUTION}-security, ${_DISTRIBUTION}-updates"
+							sid)
+								db_set lxc-debconfig/archives ""
+								;;
+
+							squeeze)
+								db_set lxc-debconfig/archives "${_DISTRIBUTION}-security, ${_DISTRIBUTION}-updates, ${_DISTRIBUTION}-lts, ${_DISTRIBUTION}-backports"
 								;;
 
 							*)
@@ -159,10 +163,10 @@ Archives ()
 				;;
 
 			progress-linux)
-				db_subst lxc-debconfig/archives CHOICES "staging, Security, Security (staging), Updates, Updates (staging), Backports, Backports (staging)"
-				db_subst lxc-debconfig/archives CHOICES_C "${_DISTRIBUTION}-staging, ${_DISTRIBUTION}-security, ${_DISTRIBUTION}-security-staging, ${_DISTRIBUTION}-updates, ${_DISTRIBUTION}-updates-staging, ${_DISTRIBUTION}-backports, ${_DISTRIBUTION}-backports-staging"
+				db_subst lxc-debconfig/archives CHOICES "staging, Security, Security (staging), Updates, Updates (staging), LTS, LTS (staging), Backports, Backports (staging)"
+				db_subst lxc-debconfig/archives CHOICES_C "${_DISTRIBUTION}-staging, ${_DISTRIBUTION}-security, ${_DISTRIBUTION}-security-staging, ${_DISTRIBUTION}-updates, ${_DISTRIBUTION}-updates-staging, ${_DISTRIBUTION}-lts, ${_DISTRIBUTION}-lts-staging, ${_DISTRIBUTION}-backports, ${_DISTRIBUTION}-backports-staging"
 
-				db_set lxc-debconfig/archives "${_DISTRIBUTION}-security, ${_DISTRIBUTION}-updates, ${_DISTRIBUTION}-backports"
+				db_set lxc-debconfig/archives "${_DISTRIBUTION}-security, ${_DISTRIBUTION}-updates, ${_DISTRIBUTION}-lts, ${_DISTRIBUTION}-backports"
 				db_fset lxc-debconfig/archives seen false
 				;;
 		esac
@@ -190,10 +194,19 @@ Parent_archives ()
 	then
 		case "${_MODE}" in
 			progress-linux)
-				db_subst lxc-debconfig/parent-archives CHOICES "Security, Updates , Backports, Proposed Updates"
-				db_subst lxc-debconfig/parent-archives CHOICES_C "${_DISTRIBUTION}-security, ${_DISTRIBUTION}-updates, ${_DISTRIBUTION}-backports, ${_DISTRIBUTION}-proposed-updates"
+				db_subst lxc-debconfig/parent-archives CHOICES "Security, Updates, LTS, Backports, Proposed Updates"
+				db_subst lxc-debconfig/parent-archives CHOICES_C "${_DISTRIBUTION}-security, ${_DISTRIBUTION}-updates, ${_DISTRIBUTION}-lts, ${_DISTRIBUTION}-backports, ${_DISTRIBUTION}-proposed-updates"
 
-				db_set lxc-debconfig/parent-archives "${_DISTRIBUTION}-security, ${_DISTRIBUTION}-updates, ${_DISTRIBUTION}-backports"
+				case "${_PARENT_DISTRIBUTION}" in
+					squeeze)
+						db_set lxc-debconfig/parent-archives "${_DISTRIBUTION}-security, ${_DISTRIBUTION}-lts, ${_DISTRIBUTION}-updates, ${_DISTRIBUTION}-backports"
+						;;
+
+					*)
+						db_set lxc-debconfig/parent-archives "${_DISTRIBUTION}-security, ${_DISTRIBUTION}-updates, ${_DISTRIBUTION}-backports"
+						;;
+				esac
+
 				db_fset lxc-debconfig/parent-archives seen false
 
 				db_settitle lxc-debconfig/title
@@ -202,7 +215,7 @@ Parent_archives ()
 				;;
 
 			*)
-				db_subst lxc-debconfig/parent-archives CHOICES "Security, Updates , Backports, Proposed Updates"
+				db_subst lxc-debconfig/parent-archives CHOICES "Security, Updates, LTS, Backports, Proposed Updates"
 				db_subst lxc-debconfig/parent-archives CHOICES_C "${_ARCHIVES}"
 
 				db_set lxc-debconfig/parent-archives "${_ARCHIVES}"
@@ -217,7 +230,15 @@ Parent_archives ()
 		then
 			case "${_MODE}" in
 				progress-linux)
-					_PARENT_ARCHIVES="${_DISTRIBUTION}-security, ${_DISTRIBUTION}-updates, ${_DISTRIBUTION}-backports"
+					case "${_PARENT_DISTRIBUTION}" in
+						squeeze)
+							_PARENT_ARCHIVES="${_DISTRIBUTION}-security, ${_DISTRIBUTION}-updates, ${_DISTRIBUTION}-lts, ${_DISTRIBUTION}-backports"
+							;;
+
+						*)
+							_PARENT_ARCHIVES="${_DISTRIBUTION}-security, ${_DISTRIBUTION}-updates, ${_DISTRIBUTION}-backports"
+							;;
+					esac
 					;;
 
 				*)

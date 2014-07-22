@@ -42,7 +42,24 @@ EOF
 		mv -f "${globalconf}.tmp" "${globalconf}"
 
 		# Create lxc directories
-		for _DIRECTORY in "${lxc_path}" /etc/lxc/debconfig /usr/share/lxc/cache /usr/share/lxc/packages /var/log/lxc
+		mkdir -p "${lxc_path}"
+
+		if [ "${lxc_path}" != "/var/lib/lxc" ]
+		then
+			if [ -h /var/lib/lxc ]
+			then
+				rm -f /var/lib/lxc
+				ln -s "${lxc_path}" /var/lib/lxc
+			else
+				if [ -e /var/lib/lxc ] && if find /var/lib/lxc -maxdepth 0 -empty > /dev/null 2>&1
+				then
+					rmdir /var/lib/lxc
+					ln -s "${lxc_path}" /var/lib/lxc
+				fi
+			fi
+		fi
+
+		for _DIRECTORY in /etc/lxc/debconfig /usr/share/lxc/cache /usr/share/lxc/packages /var/log/lxc
 		do
 			# Using ls to not fail on (temporarily) dangling symlinks
 			# which might be the sysadmins intention

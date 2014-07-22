@@ -1,3 +1,16 @@
+lxc (1.1.0~alpha1-3) unstable; urgency=low
+
+  * Switching parent distribution for cairon to jessie.
+  * Adding support for LTS repos.
+  * Using relative mountpoints for data directories.
+  * Updating preseed files.
+  * Replacing /etc/mtab with a symlink to /proc/self/mounts.
+  * Refreshing manpages.
+  * Overwrite container config file when creating new containers.
+  * Adjusting lxc directory automatically in debconf handling.
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Tue, 22 Jul 2014 11:39:29 +0200
+
 lxc (1.1.0~alpha1-2) unstable; urgency=low
 
   [ Daniel Baumann ]

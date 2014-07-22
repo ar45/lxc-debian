@@ -152,6 +152,10 @@ Configure_system ()
 				echo "deb ${_PARENT_MIRROR} ${_PARENT_DIST}-updates ${_PARENT_AREA}" >> "${_ROOTFS}/etc/apt/sources.list.d/debian.list"
 				;;
 
+			${_PARENT_DIST}-lts)
+				echo "deb ${_PARENT_MIRROR} ${_PARENT_DIST}-lts ${_PARENT_AREA}" >> "${_ROOTFS}/etc/apt/sources.list.d/debian.list"
+				;;
+
 			${_PARENT_DIST}-backports)
 				echo "deb ${_PARENT_MIRROR_BACKPORTS} ${_PARENT_DIST}-backports ${_PARENT_AREA}" >> "${_ROOTFS}/etc/apt/sources.list.d/debian.list"
 				;;
@@ -196,6 +200,14 @@ Configure_system ()
 						echo "deb ${_MIRROR} ${_DIST}-updates-staging ${_AREA}" >> "${_ROOTFS}/etc/apt/sources.list.d/progress-linux.list"
 						;;
 
+					${_DIST}-lts)
+						echo "deb ${_MIRROR} ${_DIST}-lts ${_AREA}" >> "${_ROOTFS}/etc/apt/sources.list.d/progress-linux.list"
+						;;
+
+					${_DIST}-lts-staging)
+						echo "deb ${_MIRROR} ${_DIST}-lts-staging ${_AREA}" >> "${_ROOTFS}/etc/apt/sources.list.d/progress-linux.list"
+						;;
+
 					${_DIST}-backports)
 						echo "deb ${_MIRROR_BACKPORTS} ${_DIST}-backports ${_AREA}" >> "${_ROOTFS}/etc/apt/sources.list.d/progress-linux.list"
 						;;
@@ -231,6 +243,10 @@ cat > "${_ROOTFS}/etc/fstab" << EOF
 EOF
 
 	Upgrade_system "${_ROOTFS}"
+
+	# Fix /etc/mtab
+	rm -f "${_CACHE}/${_DISTRIBUTION}_${_ARCHITECTURE}.partial/etc/mtab"
+	ln -s /proc/self/mounts "${_CACHE}/${_DISTRIBUTION}_${_ARCHITECTURE}.partial/etc/mtab"
 
 	# Temporary hack for base-files
 	for _FILE in motd.tail motd profile
@@ -537,6 +553,10 @@ Pin-Priority: 999
 Package: *
 Pin: release n=${_DIST}-updates
 Pin-Priority: 999
+
+Package: *
+Pin: release n=${_DIST}-lts
+Pin-Priority: 999
 EOF
 			case "${_DISTRIBUTION}" in
 				*-backports)
@@ -771,7 +791,7 @@ Copy_configuration()
 	_ROOTFS="${2}"
 	_NAME="${3}"
 
-cat >> "${_PATH}/config" << EOF
+cat > "${_PATH}/config" << EOF
 # ${_PATH}/config
 
 ## Container
@@ -934,6 +954,11 @@ EOF
 			# Create directories
 			_SOURCE="$(echo ${_ENTRY} | awk '{ print $1 }')"
 			_TARGET="$(echo ${_ENTRY} | awk '{ print $2 }')"
+
+			if [ "$(echo ${_TARGET} | cut -b 1)" != "/" ]
+			then
+				_TARGET="${_PATH}/rootfs/${_TARGET}"
+			fi
 
 			mkdir -p "${_SOURCE}"
 			mkdir -p "${_TARGET}"

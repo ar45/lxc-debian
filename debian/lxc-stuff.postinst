@@ -51,7 +51,7 @@ EOF
 				rm -f /var/lib/lxc
 				ln -s "${lxc_path}" /var/lib/lxc
 			else
-				if [ -e /var/lib/lxc ] && if find /var/lib/lxc -maxdepth 0 -empty > /dev/null 2>&1
+				if [ -e /var/lib/lxc ] && find /var/lib/lxc -maxdepth 0 -empty > /dev/null 2>&1
 				then
 					rmdir /var/lib/lxc
 					ln -s "${lxc_path}" /var/lib/lxc

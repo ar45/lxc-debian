@@ -1,3 +1,9 @@
+lxc (1.1.0~alpha1-4) unstable; urgency=low
+
+  * Correcting syntax typo in lxc-stuff postinst.
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Tue, 22 Jul 2014 16:16:29 +0200
+
 lxc (1.1.0~alpha1-3) unstable; urgency=low
 
   * Switching parent distribution for cairon to jessie.

@@ -1,3 +1,9 @@
+lxc (1.1.0~alpha1-5) unstable; urgency=low
+
+  * Updating default mirrors in preseed files.
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Tue, 29 Jul 2014 00:02:50 +0200
+
 lxc (1.1.0~alpha1-4) unstable; urgency=low
 
   * Correcting syntax typo in lxc-stuff postinst.

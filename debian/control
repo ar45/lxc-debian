@@ -2,7 +2,6 @@ Source: lxc
 Section: admin
 Priority: optional
 Maintainer: Daniel Baumann <mail@daniel-baumann.ch>
-Uploaders: Jonas Genannt <jonas.genannt@capi2name.de>
 Build-Depends:
  debhelper (>= 9),
  dh-autoreconf,
@@ -33,7 +32,9 @@ Depends:
 Recommends:
  lua5.2,
  rsync,
-Suggests: lxc-stuff
+Suggests: debootstrap
+Conflicts: lxc-dev
+Replaces: lxc-dev
 Description: Linux Containers userspace tools
  Containers are insulated areas inside a system, which have their own namespace
  for filesystem, network, PID, IPC, CPU and memory allocation and which can be
@@ -44,29 +45,6 @@ Description: Linux Containers userspace tools
  daemon in a container, or to boot an entire "containerized" system, and to
  manage and debug your containers.
 
-Package: lxc-stuff
-Architecture: all
-Depends:
- ${misc:Depends},
- lxc (>= ${source:Version}),
-Breaks: lxc (<< 1.0.0~alpha)
-Replaces: lxc
-Recommends:
- debootstrap,
- irker,
-Suggests:
- live-debconfig-doc,
- gpgv,
- debian-keyring,
- rsync,
-Description: Linux Containers userspace tools (additional utilities)
- Containers are insulated areas inside a system, which have their own namespace
- for filesystem, network, PID, IPC, CPU and memory allocation and which can be
- created using the Control Group and Namespace features included in the Linux
- kernel.
- .
- This package provides additional utilities for lxc.
-
 Package: lxc-dbg
 Section: debug
 Priority: extra
@@ -74,7 +52,6 @@ Architecture: linux-any
 Depends:
  ${misc:Depends},
  lxc (= ${binary:Version}),
- lxc-dev (= ${binary:Version}),
 Description: Linux Containers userspace tools (debug)
  Containers are insulated areas inside a system, which have their own namespace
  for filesystem, network, PID, IPC, CPU and memory allocation and which can be
@@ -82,18 +59,3 @@ Description: Linux Containers userspace tools (debug)
  kernel.
  .
  This package contains the debugging symbols.
-
-Package: lxc-dev
-Section: libdevel
-Architecture: linux-any
-Depends:
- ${misc:Depends},
- ${shlibs:Depends},
- lxc (= ${binary:Version}),
-Description: Linux Containers userspace tools (development)
- Containers are insulated areas inside a system, which have their own namespace
- for filesystem, network, PID, IPC, CPU and memory allocation and which can be
- created using the Control Group and Namespace features included in the Linux
- kernel.
- .
- This package contains the development files.

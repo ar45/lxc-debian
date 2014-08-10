@@ -1,3 +1,20 @@
+lxc (1:1.0.5-1) unstable; urgency=low
+
+  * Due to 'popular demand', dropping Debian custom additions and shipping
+    an (almost) vanilla lxc package in Debian from now on.
+  * Removing Jonas from uploaders, thanks for your past support.
+  * Dropping lxc-dev, according to ftp-master this is not acceptable
+    anymore without having split out library package.
+  * Merging upstream version 1.0.5:
+    - lxc 1.1 would have been ready before the jessie freeze
+      but apparently everyone knows it better than me so
+      let's give in and have 1.0 in jessie (Closes: #757326).
+  * Refreshing lsb-init-functions.patch.
+  * Refreshing debian-config.patch.
+  * Adding debootstrap to suggests.
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Sun, 10 Aug 2014 12:55:27 +0200
+
 lxc (1.1.0~alpha1-5) unstable; urgency=low
 
   * Updating default mirrors in preseed files.

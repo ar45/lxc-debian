@@ -20,8 +20,7 @@
 # Note that /etc/hostname is updated by lxc itself
 for file in \
     $LXC_ROOTFS_PATH/etc/sysconfig/network \
-    $LXC_ROOTFS_PATH/etc/sysconfig/network-scripts/ifcfg-* \
-    $LXC_ROOTFS_PATH/etc/hosts ;
+    $LXC_ROOTFS_PATH/etc/sysconfig/network-scripts/ifcfg-* ;
 do
     if [ -f $file ]; then
         sed -i "s|$LXC_SRC_NAME|$LXC_NAME|" $file

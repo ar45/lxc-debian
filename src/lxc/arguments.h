@@ -90,7 +90,6 @@ struct lxc_arguments {
 
 	/* auto-start */
 	int all;
-	int ignore_auto;
 	int list;
 	char *groups;
 

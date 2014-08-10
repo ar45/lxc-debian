@@ -29,10 +29,6 @@ override_dh_auto_configure:
 override_dh_auto_install:
 	dh_auto_install -- SYSTEMD_UNIT_DIR=/lib/systemd/system
 
-	# tests
-	mkdir -p debian/lxc-dev/usr/bin
-	mv debian/tmp/usr/bin/lxc-test-* debian/lxc-dev/usr/bin
-
 	# fix systemd service
 	sed -i -e 's|$${prefix}/lib/.*/lxc/|/usr/lib/$(DEB_HOST_MULTIARCH)/lxc/|g' debian/tmp/lib/systemd/system/lxc.service
 
@@ -41,6 +37,11 @@ ifeq ($(DEB_VENDOR),Progress Linux)
 	# rename lxc-debian to lxc-debian.upstream
 	mv debian/tmp/usr/share/lxc/templates/lxc-debian debian/tmp/usr/share/lxc/templates/lxc-debian.upstream
 endif
+
+	# removing unused files
+	rm -rf debian/tmp/usr/include
+	rm -f debian/tmp/usr/lib/*/*.so
+	rm -rf debian/tmp/usr/lib/*/pkgconfig
 
 	# remove lxc-top until lua-alt-getopt is available
 	rm -f debian/tmp/usr/bin/lxc-top
@@ -58,14 +59,6 @@ override_dh_install:
 
 override_dh_installinit:
 	dh_installinit -p lxc --onlyscripts --no-restart-on-upgrade --no-start --name lxc
-	dh_installinit -plxc-stuff --onlyscripts --no-restart-on-upgrade --no-start --name irkerhook-lxc
-
-override_dh_link:
-ifeq ($(DEB_VENDOR),Progress Linux)
-	# install lxc-debconfig as lxc-debian
-	dh_link -plxc-stuff /usr/share/lxc/templates/lxc-debconfig	/usr/share/lxc/templates/lxc-debian
-	dh_link -plxc-stuff /usr/share/lxc/templates/lxc-debconfig.d	/usr/share/lxc/templates/lxc-debian.d
-endif
 
 override_dh_strip:
 	dh_strip --dbg-package=lxc-dbg

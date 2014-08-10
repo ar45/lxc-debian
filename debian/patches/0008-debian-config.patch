@@ -4,11 +4,11 @@ Description: Don't mount fuse into the container, will fail if fuse isn't instal
 diff -Naurp lxc.orig/config/templates/debian.common.conf.in lxc/config/templates/debian.common.conf.in
 --- lxc.orig/config/templates/debian.common.conf.in
 +++ lxc/config/templates/debian.common.conf.in
-@@ -7,7 +7,6 @@ lxc.devttydir =
+@@ -4,7 +4,6 @@ lxc.pivotdir = lxc_putold
  # Default mount entries
  lxc.mount.entry = proc proc proc nodev,noexec,nosuid 0 0
  lxc.mount.entry = sysfs sys sysfs defaults 0 0
 -lxc.mount.entry = /sys/fs/fuse/connections sys/fs/fuse/connections none bind,optional 0 0
  
- # When using LXC with apparmor, the container will be confined by default.
- # If you wish for it to instead run unconfined, copy the following line
+ # Default console settings
+ lxc.tty = 4

@@ -12,3 +12,5 @@ usr/share/lua
 usr/share/lxc
 usr/share/man
 var
+
+doc/api/html/*	/usr/share/doc/lxc/html

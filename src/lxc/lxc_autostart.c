@@ -40,7 +40,6 @@ static int my_parser(struct lxc_arguments* args, int c, char* arg)
 	case 'r': args->reboot = 1; break;
 	case 's': args->shutdown = 1; break;
 	case 'a': args->all = 1; break;
-	case 'A': args->ignore_auto = 1; break;
 	case 'g': cmd_groups_list = accumulate_list( arg, ",", cmd_groups_list); break;
 	case 't': args->timeout = atoi(arg); break;
 	}
@@ -53,7 +52,6 @@ static const struct option my_longopts[] = {
 	{"reboot", no_argument, 0, 'r'},
 	{"shutdown", no_argument, 0, 's'},
 	{"all", no_argument, 0, 'a'},
-	{"ignore-auto", no_argument, 0, 'A'},
 	{"groups", required_argument, 0, 'g'},
 	{"timeout", required_argument, 0, 't'},
 	{"help", no_argument, 0, 'h'},
@@ -73,7 +71,6 @@ Options:\n\
   -s, --shutdown    shutdown the containers instead of starting them\n\
 \n\
   -a, --all         list all auto-started containers (ignore groups)\n\
-  -A, --ignore-auto ignore lxc.start.auto and select all matching containers\n\
   -g, --groups      list of groups (comma separated) to select\n\
   -t, --timeout=T   wait T seconds before hard-stopping\n",
 	.options  = my_longopts,
@@ -397,8 +394,7 @@ int main(int argc, char *argv[])
 				continue;
 			}
 
-			if (!my_args.ignore_auto &&
-			    get_config_integer(c, "lxc.start.auto") != 1) {
+			if (get_config_integer(c, "lxc.start.auto") != 1) {
 				/* We're done with this container */
 				if ( lxc_container_put(c) > 0 )
 					containers[i] = NULL;
@@ -454,7 +450,7 @@ int main(int argc, char *argv[])
 				if (c->is_running(c)) {
 					if (my_args.list)
 						printf("%s %d\n", c->name,
-						       get_config_integer(c, "lxc.start.delay"));
+							get_config_integer(c, "lxc.start.delay"));
 					else {
 						if (!c->reboot(c))
 							fprintf(stderr, "Error rebooting container: %s\n", c->name);
@@ -468,7 +464,7 @@ int main(int argc, char *argv[])
 				if (!c->is_running(c)) {
 					if (my_args.list)
 						printf("%s %d\n", c->name,
-						       get_config_integer(c, "lxc.start.delay"));
+							get_config_integer(c, "lxc.start.delay"));
 					else {
 						if (!c->start(c, 0, default_start_args))
 							fprintf(stderr, "Error starting container: %s\n", c->name);
@@ -491,7 +487,6 @@ int main(int argc, char *argv[])
 				c_groups_lists[i] = NULL;
 			}
 		}
-
 	}
 
 	/* clean up any lingering detritus */

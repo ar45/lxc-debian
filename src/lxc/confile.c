@@ -1479,9 +1479,6 @@ static int config_cap_keep(const char *key, const char *value,
                         break;
 		}
 
-		if (!strcmp(token, "none"))
-			lxc_clear_config_keepcaps(lxc_conf);
-
 		keeplist = malloc(sizeof(*keeplist));
 		if (!keeplist) {
 			SYSERROR("failed to allocate keepcap list");
@@ -1555,34 +1552,10 @@ static int config_console(const char *key, const char *value,
 	return config_path_item(&lxc_conf->console.path, value);
 }
 
-static int add_include_file(const char *fname, struct lxc_conf *lxc_conf)
-{
-	struct lxc_list *list;
-	char *v;
-	int len = strlen(fname);
-
-	list = malloc(sizeof(*list));
-	if (!list)
-		return -1;
-	lxc_list_init(list);
-	v = malloc(len+1);
-	if (!v) {
-		free(list);
-		return -1;
-	}
-	strncpy(v, fname, len);
-	v[len] = '\0';
-	list->elem = v;
-	lxc_list_add_tail(&lxc_conf->includes, list);
-	return 0;
-}
-
 static int config_includefile(const char *key, const char *value,
 			  struct lxc_conf *lxc_conf)
 {
-	if (lxc_conf->unexpanded)
-		return add_include_file(value, lxc_conf);
-	return lxc_config_read(value, lxc_conf, NULL);
+	return lxc_config_read(value, lxc_conf);
 }
 
 static int config_rootfs(const char *key, const char *value,
@@ -1635,31 +1608,6 @@ static int config_utsname(const char *key, const char *value,
 	return 0;
 }
 
-static int store_martian_option(char *line, void *data)
-{
-	struct lxc_conf *conf = data;
-	char *str;
-	struct lxc_list *list;
-	size_t len = strlen(line);
-
-	if (!conf->unexpanded)
-		return 0;
-	list = malloc(sizeof(*list));
-	if (!list)
-		return -1;
-	lxc_list_init(list);
-	str = malloc(len+1);
-	if (!str) {
-		free(list);
-		return -1;
-	}
-	strncpy(str, line, len);
-	str[len] = '\0';
-	list->elem = str;
-	lxc_list_add_tail(&conf->aliens, list);
-	return 0;
-}
-
 static int parse_line(char *buffer, void *data)
 {
 	struct lxc_config_t *config;
@@ -1684,15 +1632,11 @@ static int parse_line(char *buffer, void *data)
 
 	line += lxc_char_left_gc(line, strlen(line));
 
-	/* ignore comments */
-	if (line[0] == '#')
+	/* martian option - ignoring it, the commented lines beginning by '#'
+	 * fall in this case
+	 */
+	if (strncmp(line, "lxc.", 4))
 		goto out;
-
-	/* martian option - save it in the unexpanded config only */
-	if (strncmp(line, "lxc.", 4)) {
-		ret = store_martian_option(line, data);
-		goto out;
-	}
 
 	ret = -1;
 
@@ -1729,10 +1673,8 @@ static int lxc_config_readline(char *buffer, struct lxc_conf *conf)
 	return parse_line(buffer, conf);
 }
 
-int lxc_config_read(const char *file, struct lxc_conf *conf, struct lxc_conf *unexp_conf)
+int lxc_config_read(const char *file, struct lxc_conf *conf)
 {
-	int ret;
-
 	if( access(file, R_OK) == -1 ) {
 		return -1;
 	}
@@ -1740,16 +1682,7 @@ int lxc_config_read(const char *file, struct lxc_conf *conf, struct lxc_conf *un
 	if( ! conf->rcfile ) {
 		conf->rcfile = strdup( file );
 	}
-	ret = lxc_file_for_each_line(file, parse_line, conf);
-	if (ret)
-		return ret;
-	if (!unexp_conf)
-		return 0;
-	if (!unexp_conf->rcfile) {
-		unexp_conf->rcfile = strdup( file );
-	}
-
-	return lxc_file_for_each_line(file, parse_line, unexp_conf);
+	return lxc_file_for_each_line(file, parse_line, conf);
 }
 
 int lxc_config_define_add(struct lxc_list *defines, char* arg)
@@ -1874,7 +1807,7 @@ static int lxc_get_arch_entry(struct lxc_conf *c, char *retv, int inlen)
 	int len = 0;
 
 	switch(c->personality) {
-	case PER_LINUX32: strprint(retv, inlen, "i686"); break;
+	case PER_LINUX32: strprint(retv, inlen, "x86"); break;
 	case PER_LINUX: strprint(retv, inlen, "x86_64"); break;
 	default: break;
 	}
@@ -2291,16 +2224,6 @@ void write_config(FILE *fout, struct lxc_conf *c)
 	int i;
 	const char *signame;
 
-	/* first write any includes */
-	lxc_list_for_each(it, &c->includes) {
-		fprintf(fout, "lxc.include = %s\n", (char *)it->elem);
-	}
-
-	/* now write any aliens */
-	lxc_list_for_each(it, &c->aliens) {
-		fprintf(fout, "%s\n", (char *)it->elem);
-	}
-
 	if (c->fstab)
 		fprintf(fout, "lxc.mount = %s\n", c->fstab);
 	lxc_list_for_each(it, &c->mount_list) {
@@ -2355,7 +2278,7 @@ void write_config(FILE *fout, struct lxc_conf *c)
 	}
 	#if HAVE_SYS_PERSONALITY_H
 	switch(c->personality) {
-	case PER_LINUX32: fprintf(fout, "lxc.arch = i686\n"); break;
+	case PER_LINUX32: fprintf(fout, "lxc.arch = x86\n"); break;
 	case PER_LINUX: fprintf(fout, "lxc.arch = x86_64\n"); break;
 	default: break;
 	}

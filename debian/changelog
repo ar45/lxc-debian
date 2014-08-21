@@ -1,3 +1,27 @@
+lxc (1:1.0.5-2) unstable; urgency=low
+
+  * Using and build-depending on dh-systemd (Closes: #758628).
+  * Rewording changelog entry about merging upstream version 1.0.5.
+  * Marking removal of lxc-top due to missing lua-alt-getopt in rules as
+    debian only.
+  * Dropping special handling of lxc-debian on progress-linux.
+  * Renaming debian-config.patch to lxc-debian-fuse.patch.
+  * Renaming lxc-sysvinit.patch to sysvinit-directory.patch.
+  * Renaming lsb-init-headers.patch to sysvinit-lsb-headers.patch.
+  * Renaming lsb-init-functions.patch to sysvinit-lsb-functions.patch.
+  * Renaming lxc-init-lock.patch to sysvinit-lsb-lock.patch.
+  * Renaming lxc-sigint.patch to lxc-attach-sigint.patch.
+  * Adding references to upstreams bug tracker in all patches.
+  * Adding patch from Ondřej Surý <ondrej@debian.org> to change
+    PermitRootLogin yes to PermitRootLogin without-password in sshd_config
+    (Closes: #758647).
+  * Adding patch to set random root password in lxc-debian (Closes:
+    #758643).
+  * Removing /etc/default/lxc for upgrades of wheezy to jessie (Closes:
+    #758800).
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Thu, 21 Aug 2014 15:54:58 +0200
+
 lxc (1:1.0.5-1) unstable; urgency=low
 
   * Due to 'popular demand', dropping Debian custom additions and shipping
@@ -5,10 +29,7 @@ lxc (1:1.0.5-1) unstable; urgency=low
   * Removing Jonas from uploaders, thanks for your past support.
   * Dropping lxc-dev, according to ftp-master this is not acceptable
     anymore without having split out library package.
-  * Merging upstream version 1.0.5:
-    - lxc 1.1 would have been ready before the jessie freeze
-      but apparently everyone knows it better than me so
-      let's give in and have 1.0 in jessie (Closes: #757326).
+  * Merging upstream version 1.0.5 (Closes: #757326).
   * Refreshing lsb-init-functions.patch.
   * Refreshing debian-config.patch.
   * Adding debootstrap to suggests.

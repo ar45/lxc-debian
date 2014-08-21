@@ -1,5 +1,6 @@
 Author: Daniel Baumann <mail@daniel-baumann.ch>
-Description: Correcting wrong LSB headers in sysvinit script.
+Description: Correcting wrong LSB headers in sysvinit script,
+ see https://github.com/lxc/lxc/issues/308.
 
 diff -Naurp lxc.orig/config/init/sysvinit/lxc.in lxc/config/init/sysvinit/lxc.in
 --- lxc.orig/config/init/sysvinit/lxc.in

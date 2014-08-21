@@ -1,5 +1,6 @@
 Author: Daniel Baumann <mail@daniel-baumann.ch>
-Description: Adding missing Python shebang.
+Description: Adding missing Python shebang,
+ see https://github.com/lxc/lxc/issues/314.
 
 diff -Naurp lxc.orig/config/yum/lxc-patch.py lxc/config/yum/lxc-patch.py
 --- lxc.orig/config/yum/lxc-patch.py

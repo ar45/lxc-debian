@@ -1,5 +1,6 @@
 Author: Daniel Baumann <mail@daniel-baumann.ch>
-Description: Don't mount fuse into the container, will fail if fuse isn't installed.
+Description: Don't mount fuse into the container, will fail if fuse isn't installed,
+ see https://github.com/lxc/lxc/issues/304.
 
 diff -Naurp lxc.orig/config/templates/debian.common.conf.in lxc/config/templates/debian.common.conf.in
 --- lxc.orig/config/templates/debian.common.conf.in

@@ -1,7 +1,8 @@
 Author: Stefan Siegel <siegel.stefan@gmail.com>
 Description: lxc-attach should ignore SIGINT (Closes: #740264).
  lxc-attach terminates on SIGINT, which is extremely annoying.
- Pressing Ctrl-C should kill the running process, not the whole session.
+ Pressing Ctrl-C should kill the running process, not the whole session,
+ see https://github.com/lxc/lxc/issues/313.
 
 diff -Naurp lxc.orig/src/lxc/lxc_attach.c lxc/src/lxc/lxc_attach.c
 --- lxc.orig/src/lxc/lxc_attach.c

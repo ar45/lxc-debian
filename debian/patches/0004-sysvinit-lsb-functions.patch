@@ -1,5 +1,8 @@
 Author: Daniel Baumann <mail@daniel-baumann.ch>
-Description: Correcting wrong LSB functions in sysvinit script (Closes: #740066).
+Description: Correcting wrong LSB functions in sysvinit script (Closes: #740066),
+ see https://github.com/lxc/lxc/issues/309,
+ https://github.com/lxc/lxc/issues/310,
+ and https://github.com/lxc/lxc/issues/311.
 
 diff -Naurp lxc.orig/config/init/sysvinit/lxc.in lxc/config/init/sysvinit/lxc.in
 --- lxc.orig/config/init/sysvinit/lxc.in

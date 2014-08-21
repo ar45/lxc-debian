@@ -1,5 +1,6 @@
 Author: Daniel Baumann <mail@daniel-baumann.ch>
-Description: Correcting wrong default directory for lxc-init.
+Description: Correcting wrong default directory for lxc-init,
+ see https://github.com/lxc/lxc/issues/306.
 
 diff -Naurp lxc.orig/configure.ac lxc/configure.ac
 --- lxc.orig/configure.ac

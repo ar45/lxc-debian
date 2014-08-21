@@ -1,5 +1,6 @@
 Author: Daniel Baumann <mail@daniel-baumann.ch>
-Description: Creating missing lock directory in sysvinit script (Closes: #740216).
+Description: Creating missing lock directory in sysvinit script (Closes: #740216),
+ see https://github.com/lxc/lxc/issues/312.
 
 diff -Naurp lxc.orig/config/init/sysvinit/lxc.in lxc/config/init/sysvinit/lxc.in
 --- lxc.orig/config/init/sysvinit/lxc.in

@@ -5,7 +5,7 @@
 DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
 
 %:
-	dh ${@} --parallel --with autoreconf,autotools_dev,python3
+	dh ${@} --parallel --with autoreconf,autotools_dev,python3,systemd
 
 override_dh_auto_configure:
 	dh_auto_configure -- \
@@ -32,21 +32,17 @@ override_dh_auto_install:
 	# fix systemd service
 	sed -i -e 's|$${prefix}/lib/.*/lxc/|/usr/lib/$(DEB_HOST_MULTIARCH)/lxc/|g' debian/tmp/lib/systemd/system/lxc.service
 
-	# template
-ifeq ($(DEB_VENDOR),Progress Linux)
-	# rename lxc-debian to lxc-debian.upstream
-	mv debian/tmp/usr/share/lxc/templates/lxc-debian debian/tmp/usr/share/lxc/templates/lxc-debian.upstream
-endif
-
 	# removing unused files
 	rm -rf debian/tmp/usr/include
 	rm -f debian/tmp/usr/lib/*/*.so
 	rm -rf debian/tmp/usr/lib/*/pkgconfig
 
 	# remove lxc-top until lua-alt-getopt is available
+ifeq ($(DEB_VENDOR),Debian)
 	rm -f debian/tmp/usr/bin/lxc-top
 	rm -f debian/tmp/usr/share/man/*/lxc-top.*
 	rm -f debian/tmp/usr/share/man/*/*/lxc-top.*
+endif
 
 override_dh_builddeb:
 	dh_builddeb -- -Zxz

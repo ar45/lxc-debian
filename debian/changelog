@@ -1,3 +1,14 @@
+lxc (1:1.0.5-3) unstable; urgency=low
+
+  * Dropping fixes for prefix in systemd unit file, not needed anymore.
+  * Moving debootstrap to recommends.
+  * Moving lua to suggests.
+  * Adding lua suggests for non-debian system.
+  * Showing warning when lxc is used on systemd with cgroups mounted in
+    /etc/fstab (Closes: #760357).
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Thu, 04 Sep 2014 04:30:47 +0200
+
 lxc (1:1.0.5-2) unstable; urgency=low
 
   * Using and build-depending on dh-systemd (Closes: #758628).

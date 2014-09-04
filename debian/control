@@ -31,9 +31,11 @@ Depends:
  ${shlibs:Depends},
  ${python3:Depends},
 Recommends:
- lua5.2,
+ debootstrap,
  rsync,
-Suggests: debootstrap
+Suggests:
+ lua5.2,
+ ${lua:Suggests},
 Conflicts: lxc-dev
 Replaces: lxc-dev
 Description: Linux Containers userspace tools

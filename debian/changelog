@@ -1,3 +1,13 @@
+lxc (1:1.0.6-1) unstable; urgency=low
+
+  * Merging upstream version 1.0.6.
+  * Refreshing sysvinit-lsb-functions.patch.
+  * Updating to standards version 3.9.6.
+  * Setting options for systemd in debian.common.conf (Closes: #761196,
+    #761197).
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Mon, 29 Sep 2014 12:04:40 +0200
+
 lxc (1:1.0.5-3) unstable; urgency=low
 
   * Dropping fixes for prefix in systemd unit file, not needed anymore.

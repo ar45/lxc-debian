@@ -1,3 +1,11 @@
+lxc (1:1.0.6-2) unstable; urgency=low
+
+  * Correcting automatic lua:Suggests generation.
+  * Adding openssl to recommends since upstreams lxc-debian template
+    uses openssl for mac generation.
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Tue, 07 Oct 2014 09:42:36 +0200
+
 lxc (1:1.0.6-1) unstable; urgency=low
 
   * Merging upstream version 1.0.6.

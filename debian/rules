@@ -49,7 +49,7 @@ override_dh_compress:
 
 override_dh_gencontrol:
 ifneq ($(DEB_VENDOR),Debian)
-	dh_gencontrol -- -Vlua:Suggests="lua-alt-getopt lua-filesystem"
+	dh_gencontrol -- -Vlua:Suggests="lua-alt-getopt, lua-filesystem"
 else
 	dh_gencontrol
 endif

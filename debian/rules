@@ -47,6 +47,9 @@ override_dh_builddeb:
 override_dh_compress:
 	dh_compress -X.cfg
 
+override_dh_fixperms:
+	dh_fixperms -Xusr/lib/$(DEB_HOST_MULTIARCH)/lxc/lxc-user-nic
+
 override_dh_gencontrol:
 ifneq ($(DEB_VENDOR),Debian)
 	dh_gencontrol -- -Vlua:Suggests="lua-alt-getopt, lua-filesystem"

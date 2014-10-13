@@ -1,3 +1,9 @@
+lxc (1:1.0.6-3) unstable; urgency=low
+
+  * Preserving setuid on lxc-user-nic (Closes: #764815).
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Mon, 13 Oct 2014 20:44:15 +0200
+
 lxc (1:1.0.6-2) unstable; urgency=low
 
   * Correcting automatic lua:Suggests generation.

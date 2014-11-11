@@ -10,3 +10,4 @@
 0010-lxc-debian-openssh-server.patch
 0011-lxc-debian-root-password.patch
 0012-lxc-debian-systemd.patch
+0013-lxc-create-manpage.patch

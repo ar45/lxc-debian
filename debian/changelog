@@ -1,3 +1,9 @@
+lxc (1:1.0.6-4) unstable; urgency=low
+
+  * Marking -t option in lxc-create manpage as required (Closes: #768778).
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Tue, 11 Nov 2014 19:57:58 +0100
+
 lxc (1:1.0.6-3) unstable; urgency=low
 
   * Preserving setuid on lxc-user-nic (Closes: #764815).

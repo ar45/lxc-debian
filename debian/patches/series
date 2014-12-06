@@ -11,3 +11,6 @@
 0011-lxc-debian-root-password.patch
 0012-lxc-debian-systemd.patch
 0013-lxc-create-manpage.patch
+0014-lxc-debian-sysfs.patch
+0015-lxc-debian-systemd.patch
+0016-lxc-debian-init.patch

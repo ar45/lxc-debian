@@ -1,3 +1,14 @@
+lxc (1:1.0.6-5) unstable; urgency=low
+
+  * Mounting /sys read-only in lxc-debian to prevent (one way of) escaping
+    containers (Closes: #770901).
+  * Adding patch from lxc 1.0.7 to make lxc-debian work with systemd
+    (Closes: #766216).
+  * Adding patch from lxc 1.0.7 to make lxc-debian handle switch of
+    initsystem better.
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Sat, 06 Dec 2014 13:00:36 +0100
+
 lxc (1:1.0.6-4) unstable; urgency=low
 
   * Marking -t option in lxc-create manpage as required (Closes: #768778).

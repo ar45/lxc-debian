@@ -15,4 +15,3 @@
 0015-lxc-debian-systemd.patch
 0016-lxc-debian-init.patch
 0017-lxc-debian-mirror.patch
-bpo-0001-fix-FTBFS-ia64.patch

@@ -1,3 +1,10 @@
+lxc (1:1.0.7-2) unstable; urgency=low
+
+  * Dropping pre-jessie upgrade handling.
+  * Dropping pre-jessie conflicts/replaces.
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Sat, 25 Apr 2015 08:10:48 +0200
+
 lxc (1:1.0.7-1) experimental; urgency=low
 
   * Merging upstream version 1.0.7.

@@ -14,7 +14,7 @@ override_dh_auto_configure:
 		--enable-api-docs \
 		--enable-apparmor \
 		--enable-selinux \
-		--disable-cgmanager \
+		--enable-cgmanager \
 		--enable-capabilities \
 		--enable-examples \
 		--enable-python \

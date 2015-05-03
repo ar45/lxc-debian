@@ -1,3 +1,16 @@
+lxc (1:1.0.6-6~bpo70+1) wheezy-backports; urgency=medium
+
+  * Rebuild for wheezy-backports (no changes).
+
+ -- Christian Seiler <christian@iwakd.de>  Sun, 03 May 2015 20:38:41 +0200
+
+lxc (1:1.0.6-6) unstable; urgency=low
+
+  * Use http.debian.net instead of cdn.debian.net (Closes: #774204,
+    #774472).
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Mon, 05 Jan 2015 19:24:35 +0100
+
 lxc (1:1.0.6-5) unstable; urgency=low
 
   * Mounting /sys read-only in lxc-debian to prevent (one way of) escaping

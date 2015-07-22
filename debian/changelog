@@ -1,3 +1,14 @@
+lxc (1:1.0.7-4) unstable; urgency=high
+
+  * Adding backported patch from upstream to prevent an unprivileged user
+    to use LXC to create arbitrary file on the filesystem [CVE-2015-1331]
+    (Closes: #793298).
+  * Adding backported patch from upstream to prevent an user to use LXC
+    to over-mount /proc which can be used to unconfined code execution
+    [CVE-2015-1334] (Closes: #793298).
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Wed, 22 Jul 2015 18:33:48 +0200
+
 lxc (1:1.0.7-3) unstable; urgency=low
 
   * Building with cgmanager (Closes: #773421).

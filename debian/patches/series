@@ -10,3 +10,5 @@
 0010-lxc-debian-root-password.patch
 0011-lxc-debian-systemd.patch
 0012-lxc-debian-sysfs.patch
+0013-CVE-2015-1331.patch
+0014-CVE-2015-1334.patch

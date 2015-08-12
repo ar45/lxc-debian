@@ -31,10 +31,9 @@ override_dh_auto_install:
 	mkdir -p debian/lxc/usr/share/bash-completion
 	mv debian/tmp/etc/bash_completion.d debian/lxc/usr/share/bash-completion/completions
 
-	# removing unused files
-	rm -rf debian/tmp/usr/include
-	rm -f debian/tmp/usr/lib/*/*.so
-	rm -rf debian/tmp/usr/lib/*/pkgconfig
+	# lxc-dev
+	mkdir -p debian/lxc-dev/usr/bin
+	mv debian/tmp/usr/bin/lxc-test-* debian/lxc-dev/usr/bin
 
 	# remove lxc-top until lua-alt-getopt is available
 	rm -f debian/tmp/usr/bin/lxc-top

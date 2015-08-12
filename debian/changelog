@@ -1,3 +1,12 @@
+lxc (1:1.0.7-7) unstable; urgency=low
+
+  * Moving shared library to dedicated package for future upload of lxd
+    (#768073).
+  * Re-adding lxc-dev which is now allowed again having the shared library
+    split out (Closes: #774085, #793202).
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Wed, 12 Aug 2015 18:03:23 +0200
+
 lxc (1:1.0.7-6) unstable; urgency=low
 
   * Using misc:Pre-depends variable instead of hardcoding multiarch-

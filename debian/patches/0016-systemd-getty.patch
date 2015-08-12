@@ -1,0 +1,22 @@
+Author: Cyril Bitterich <Cyril.Bitterich@1und1.de>
+Description: lxc-debian.in: Fixed errors if dbus is not installed (Closes: #794207).
+ The lxc-debian template debootstraps a minimum debian system which does not contain dbus.
+ If systemd is used this will result in getty-static.service to be used instead of getty@ .
+ The systemd default files uses 6 tty's instead of the 4 the script creates.
+ This will lead to repeated error messages in the systemd journal.
+
+diff -Naurp lxc.orig/templates/lxc-debian.in lxc/templates/lxc-debian.in
+--- lxc.orig/templates/lxc-debian.in
++++ lxc/templates/lxc-debian.in
+@@ -201,6 +201,11 @@ configure_debian_systemd()
+     mkdir -p ${rootfs}/{lib,etc}/systemd/system
+     mkdir -p ${rootfs}/etc/systemd/system/getty.target.wants
+ 
++    # Fix getty-static-service as debootstrap does not install dbus
++    if [ -e $rootfs//lib/systemd/system/getty-static.service ] ; then
++        sed 's/ getty@tty[5-9].service//g' $rootfs/lib/systemd/system/getty-static.service |  sed 's/\(tty2-tty\)[5-9]/\14/g' > $rootfs/etc/systemd/system/getty-static.service
++    fi
++
+     # This function has been copied and adapted from lxc-fedora
+     rm -f ${rootfs}/etc/systemd/system/default.target
+     touch ${rootfs}/etc/fstab

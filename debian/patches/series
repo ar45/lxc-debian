@@ -12,3 +12,5 @@
 0012-lxc-debian-sysfs.patch
 0013-CVE-2015-1331.patch
 0014-CVE-2015-1334.patch
+0015-systemd-targets.patch
+0016-systemd-getty.patch

@@ -5,3 +5,5 @@ lxc: postrm-has-useless-call-to-ldconfig
 lxc: package-name-doesnt-match-sonames
 # false positive (lxc-user-nic)
 lxc: setuid-binary
+# false positive (doxygen)
+lxc: embedded-javascript-library

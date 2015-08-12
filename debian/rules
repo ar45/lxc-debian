@@ -27,6 +27,10 @@ override_dh_auto_configure:
 override_dh_auto_install:
 	dh_auto_install -- SYSTEMD_UNIT_DIR=/lib/systemd/system
 
+	# lxc
+	mkdir -p debian/lxc/usr/share/bash-completion
+	mv debian/tmp/etc/bash_completion.d debian/lxc/usr/share/bash-completion/completions
+
 	# removing unused files
 	rm -rf debian/tmp/usr/include
 	rm -f debian/tmp/usr/lib/*/*.so

@@ -1,3 +1,16 @@
+lxc (1:1.0.7-6) unstable; urgency=low
+
+  * Using misc:Pre-depends variable instead of hardcoding multiarch-
+    support.
+  * Moving bash-completion integration from /etc/bash-completion.d to
+    /usr/share/bash-completion/completions.
+  * Dropping obsolete syslog target from systemd service file.
+  * Adding patch from upstream to fix errors in lxc-debian if dbus is not
+    installed (Closes: #794207).
+  * Updating lintian overrides.
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Wed, 12 Aug 2015 17:25:44 +0200
+
 lxc (1:1.0.7-5) unstable; urgency=low
 
   * Updating homepage field.

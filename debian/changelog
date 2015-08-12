@@ -1,3 +1,13 @@
+lxc (1:1.0.7-5) unstable; urgency=low
+
+  * Updating homepage field.
+  * Updating debian copyright string.
+  * Dropping conditionals for lua-alt-getopt, not needed anymore.
+  * Dropping enforcing of xz compression, not needed anymore.
+  * Dropping vcs fields in control for the time being.
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Wed, 12 Aug 2015 11:09:50 +0200
+
 lxc (1:1.0.7-4) unstable; urgency=high
 
   * Adding backported patch from upstream to prevent an unprivileged user

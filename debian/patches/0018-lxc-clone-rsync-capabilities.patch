@@ -1,0 +1,18 @@
+Author: Robert LeBlanc <rdleblanc@bluehost.com>
+Description: Caps are getting lost when cloning an LXC (Closes: #795422).
+ Adding the -X parameter copies the extended attributes.
+ This allows things like ping to continue to be used by a
+ non-privilged user in Debian at least.
+
+diff -Naurp lxc.orig/src/lxc/bdev.c lxc/src/lxc/bdev.c
+--- lxc.orig/src/lxc/bdev.c
++++ lxc/src/lxc/bdev.c
+@@ -93,7 +93,7 @@ static int do_rsync(const char *src, con
+ 	s[l-2] = '/';
+ 	s[l-1] = '\0';
+ 
+-	execlp("rsync", "rsync", "-aH", s, dest, (char *)NULL);
++	execlp("rsync", "rsync", "-aHX", s, dest, (char *)NULL);
+ 	exit(1);
+ }
+ 

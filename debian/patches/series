@@ -14,3 +14,5 @@
 0014-CVE-2015-1334.patch
 0015-systemd-targets.patch
 0016-systemd-getty.patch
+0017-lxc-clone-rsync-hardlinks.patch
+0018-lxc-clone-rsync-capabilities.patch

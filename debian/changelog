@@ -1,3 +1,11 @@
+lxc (1:1.0.7-8) unstable; urgency=low
+
+  * Adding patch from upstream to preserve hardlinks in lxc-clone.
+  * Adding patch from upstream to preserve capabilities in lxc-clone
+    (Closes: #795422).
+
+ -- Daniel Baumann <daniel.baumann@open-infrastructure.net>  Sun, 16 Aug 2015 13:46:24 +0200
+
 lxc (1:1.0.7-7) unstable; urgency=low
 
   * Moving shared library to dedicated package for future upload of lxd

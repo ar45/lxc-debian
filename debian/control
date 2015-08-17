@@ -68,7 +68,7 @@ Depends:
  ${shlibs:Depends},
  lxc (= ${binary:Version}),
  liblxc1 (= ${binary:Version}),
-Breaks: lxc (<< 1:1.0.7-6~)
+Breaks: lxc (<< 1:1.0.7-7~)
 Description: Linux Containers userspace tools (development)
  Containers are insulated areas inside a system, which have their own namespace
  for filesystem, network, PID, IPC, CPU and memory allocation and which can be
@@ -83,7 +83,7 @@ Architecture: linux-any
 Depends:
  ${misc:Depends},
  ${shlibs:Depends},
-Breaks: lxc (<< 1:1.0.7-6~)
+Breaks: lxc (<< 1:1.0.7-7~)
 Description: Linux Containers userspace tools (library)
  Containers are insulated areas inside a system, which have their own namespace
  for filesystem, network, PID, IPC, CPU and memory allocation and which can be

@@ -1,10 +1,17 @@
+lxc (1:1.0.7-9) unstable; urgency=low
+
+  * Adjusting breaks (Closes: #795799).
+  * Correcting email address in previous changelog entry.
+
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Mon, 17 Aug 2015 06:42:20 +0200
+
 lxc (1:1.0.7-8) unstable; urgency=low
 
   * Adding patch from upstream to preserve hardlinks in lxc-clone.
   * Adding patch from upstream to preserve capabilities in lxc-clone
     (Closes: #795422).
 
- -- Daniel Baumann <daniel.baumann@open-infrastructure.net>  Sun, 16 Aug 2015 13:46:24 +0200
+ -- Daniel Baumann <mail@daniel-baumann.ch>  Sun, 16 Aug 2015 13:46:24 +0200
 
 lxc (1:1.0.7-7) unstable; urgency=low
 

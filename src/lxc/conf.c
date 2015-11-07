@@ -1559,7 +1559,7 @@ static int setup_rootfs(struct lxc_conf *conf)
 	}
 
 	// First try mounting rootfs using a bdev
-	struct bdev *bdev = bdev_init(conf, rootfs->path, rootfs->mount, rootfs->options);
+	struct bdev *bdev = bdev_init(rootfs->path, rootfs->mount, rootfs->options);
 	if (bdev && bdev->ops->mount(bdev) == 0) {
 		bdev_put(bdev);
 		DEBUG("mounted '%s' on '%s'", rootfs->path, rootfs->mount);
@@ -2202,9 +2202,6 @@ static int parse_cap(const char *cap)
 	char *ptr = NULL;
 	int i, capid = -1;
 
-	if (!strcmp(cap, "none"))
-		return -2;
-
 	for (i = 0; i < sizeof(caps_opt)/sizeof(caps_opt[0]); i++) {
 
 		if (strcmp(cap, caps_opt[i].name))
@@ -2297,9 +2294,6 @@ static int dropcaps_except(struct lxc_list *caps)
 		keep_entry = iterator->elem;
 
 		capid = parse_cap(keep_entry);
-
-		if (capid == -2)
-			continue;
 
 	        if (capid < 0) {
 			ERROR("unknown capability %s", keep_entry);
@@ -2685,7 +2679,6 @@ struct lxc_conf *lxc_conf_init(void)
 	new->console.slave = -1;
 	new->console.name[0] = '\0';
 	new->maincmd_fd = -1;
-	new->nbd_idx = -1;
 	new->rootfs.mount = strdup(default_rootfs_mount);
 	if (!new->rootfs.mount) {
 		ERROR("lxc_conf_init : %m");
@@ -2699,8 +2692,6 @@ struct lxc_conf *lxc_conf_init(void)
 	lxc_list_init(&new->caps);
 	lxc_list_init(&new->keepcaps);
 	lxc_list_init(&new->id_map);
-	lxc_list_init(&new->includes);
-	lxc_list_init(&new->aliens);
 	for (i=0; i<NUM_LXC_HOOKS; i++)
 		lxc_list_init(&new->hooks[i]);
 	lxc_list_init(&new->groups);
@@ -3258,14 +3249,14 @@ int lxc_map_ids(struct lxc_list *idmap, pid_t pid)
 	enum idtype type;
 	char *buf = NULL, *pos, *cmdpath = NULL;
 
-	cmdpath = on_path("newuidmap", NULL);
+	cmdpath = on_path("newuidmap");
 	if (cmdpath) {
 		use_shadow = 1;
 		free(cmdpath);
 	}
 
 	if (!use_shadow) {
-		cmdpath = on_path("newgidmap", NULL);
+		cmdpath = on_path("newgidmap");
 		if (cmdpath) {
 			use_shadow = 1;
 			free(cmdpath);
@@ -3879,50 +3870,6 @@ static void remount_all_slave(void)
 		free(line);
 }
 
-void lxc_execute_bind_init(struct lxc_conf *conf)
-{
-	int ret;
-	char path[PATH_MAX], destpath[PATH_MAX], *p;
-
-	/* If init exists in the container, don't bind mount a static one */
-	p = choose_init(conf->rootfs.mount);
-	if (p) {
-		free(p);
-		return;
-	}
-
-	ret = snprintf(path, PATH_MAX, SBINDIR "/init.lxc.static");
-	if (ret < 0 || ret >= PATH_MAX) {
-		WARN("Path name too long searching for lxc.init.static");
-		return;
-	}
-
-	if (!file_exists(path)) {
-		INFO("%s does not exist on host", path);
-		return;
-	}
-
-	ret = snprintf(destpath, PATH_MAX, "%s%s", conf->rootfs.mount, "/init.lxc.static");
-	if (ret < 0 || ret >= PATH_MAX) {
-		WARN("Path name too long for container's lxc.init.static");
-		return;
-	}
-
-	if (!file_exists(destpath)) {
-		FILE * pathfile = fopen(destpath, "wb");
-		if (!pathfile) {
-			SYSERROR("Failed to create mount target '%s'", destpath);
-			return;
-		}
-		fclose(pathfile);
-	}
-
-	ret = mount(path, destpath, "none", MS_BIND, NULL);
-	if (ret < 0)
-		SYSERROR("Failed to bind lxc.init.static into container");
-	INFO("lxc.init.static bound into container at %s", path);
-}
-
 /*
  * This does the work of remounting / if it is shared, calling the
  * container pre-mount hooks, and mounting the rootfs.
@@ -4044,9 +3991,6 @@ int lxc_setup(struct lxc_handler *handler)
 	/* Make sure any start hooks are in the rootfs */
 	if (!verify_start_hooks(lxc_conf))
 		return -1;
-
-	if (lxc_conf->is_execute)
-		lxc_execute_bind_init(lxc_conf);
 
 	/* now mount only cgroup, if wanted;
 	 * before, /sys could not have been mounted
@@ -4432,28 +4376,6 @@ static void lxc_clear_saved_nics(struct lxc_conf *conf)
 	free(conf->saved_nics);
 }
 
-static inline void lxc_clear_aliens(struct lxc_conf *conf)
-{
-	struct lxc_list *it,*next;
-
-	lxc_list_for_each_safe(it, &conf->aliens, next) {
-		lxc_list_del(it);
-		free(it->elem);
-		free(it);
-	}
-}
-
-static inline void lxc_clear_includes(struct lxc_conf *conf)
-{
-	struct lxc_list *it,*next;
-
-	lxc_list_for_each_safe(it, &conf->includes, next) {
-		lxc_list_del(it);
-		free(it->elem);
-		free(it);
-	}
-}
-
 void lxc_conf_free(struct lxc_conf *conf)
 {
 	if (!conf)
@@ -4492,8 +4414,6 @@ void lxc_conf_free(struct lxc_conf *conf)
 	lxc_clear_saved_nics(conf);
 	lxc_clear_idmaps(conf);
 	lxc_clear_groups(conf);
-	lxc_clear_includes(conf);
-	lxc_clear_aliens(conf);
 	free(conf);
 }
 

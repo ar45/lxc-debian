@@ -283,7 +283,6 @@ struct saved_nic {
 
 struct lxc_conf {
 	int is_execute;
-	bool unexpanded;
 	char *fstab;
 	int tty;
 	int pts;
@@ -339,11 +338,6 @@ struct lxc_conf {
 
 	/* set to true when rootfs has been setup */
 	bool rootfs_setup;
-
-	/* list of included files */
-	struct lxc_list includes;
-	/* config entries which are not "lxc.*" are aliens */
-	struct lxc_list aliens;
 };
 
 int run_lxc_hooks(const char *name, char *hook, struct lxc_conf *conf,

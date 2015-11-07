@@ -32,6 +32,9 @@
 #include <sys/file.h>
 
 #include <lxc/lxc.h>
+#include <lxc/log.h>
+
+lxc_log_define(lxc_state, lxc);
 
 static char *strstate[] = {
 	"STOPPED", "STARTING", "RUNNING", "STOPPING",
@@ -68,22 +71,22 @@ int lxc_setstate(const char *name, lxc_state_t state)
 
 	fd = open(file, O_WRONLY);
 	if (fd < 0) {
-		lxc_log_syserror("failed to open %s file", file);
+		SYSERROR("failed to open %s file", file);
 		return -1;
 	}
 
 	if (flock(fd, LOCK_EX)) {
-		lxc_log_syserror("failed to take the lock to %s", file);
+		SYSERROR("failed to take the lock to %s", file);
 		goto out;
 	}
 
 	if (ftruncate(fd, 0)) {
-		lxc_log_syserror("failed to truncate the file %s", file);
+		SYSERROR("failed to truncate the file %s", file);
 		goto out;
 	}
 
 	if (write(fd, str, strlen(str)) < 0) {
-		lxc_log_syserror("failed to write state to %s", file);
+		SYSERROR("failed to write state to %s", file);
 		goto out;
 	}
 
@@ -92,13 +95,6 @@ out:
 	close(fd);
 
 	lxc_monitor_send_state(name, state);
-
-	/* let the event to be propagated, crappy but that works,
-	 * otherwise the events will be folded into only one event,
-	 * and I want to have them to be one by one in order
-	 * to follow the different states of the container.
-	 */
- 	usleep(200000);
 
 	return -err;
 }
@@ -111,7 +107,7 @@ int lxc_mkstate(const char *name)
 	snprintf(file, MAXPATHLEN, LXCPATH "/%s/state", name);
 	fd = creat(file, S_IRUSR|S_IWUSR);
 	if (fd < 0) {
-		lxc_log_syserror("failed to create file %s", file);
+		SYSERROR("failed to create file %s", file);
 		return -1;
 	}
 	close(fd);
@@ -135,19 +131,19 @@ lxc_state_t lxc_getstate(const char *name)
 
 	fd = open(file, O_RDONLY);
 	if (fd < 0) {
-		lxc_log_syserror("failed to open %s", file);
+		SYSERROR("failed to open %s", file);
 		return -1;
 	}
 
 	if (flock(fd, LOCK_SH)) {
-		lxc_log_syserror("failed to take the lock to %s", file);
+		SYSERROR("failed to take the lock to %s", file);
 		close(fd);
 		return -1;
 	}
 
 	err = read(fd, file, strlen(file));
 	if (err < 0) {
-		lxc_log_syserror("failed to read file %s", file);
+		SYSERROR("failed to read file %s", file);
 		close(fd);
 		return -1;
 	}
@@ -163,7 +159,7 @@ static int freezer_state(const char *name)
 	char status[MAXPATHLEN];
 	FILE *file;
 	int err;
-	
+
 	snprintf(freezer, MAXPATHLEN,
 		 LXCPATH "/%s/freezer.state", name);
 
@@ -175,7 +171,7 @@ static int freezer_state(const char *name)
 	fclose(file);
 
 	if (err == EOF) {
-		lxc_log_syserror("failed to read %s", freezer);
+		SYSERROR("failed to read %s", freezer);
 		return -1;
 	}
 

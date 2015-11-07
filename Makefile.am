@@ -1,8 +1,10 @@
 # Makefile.am
 
-SUBDIRS = doc src test etc scripts 
-DIST_SUBDIRS = config doc src test etc scripts
-EXTRA_DIST = lxc.spec CONTRIBUTING MAINTAINERS ChangeLog
+ACLOCAL_AMFLAGS = -I config
+
+SUBDIRS = src test etc scripts doc
+DIST_SUBDIRS = config src test etc scripts doc
+EXTRA_DIST = autogen.sh lxc.spec CONTRIBUTING MAINTAINERS ChangeLog
 
 ChangeLog::
 	@touch ChangeLog

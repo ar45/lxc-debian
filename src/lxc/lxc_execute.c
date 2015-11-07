@@ -31,7 +31,7 @@
 #include <sys/param.h>
 
 #include <lxc/lxc.h>
-#include <lxc/lxc_config.h>
+#include "confile.h"
 
 void usage(char *cmd)
 {
@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
 
 	argc -= nbargs;
 	
-	if (lxc_config_init(&lxc_conf)) {
+	if (lxc_conf_init(&lxc_conf)) {
 		fprintf(stderr, "failed to initialize the configuration\n");
 		goto out;
 	}

@@ -27,9 +27,12 @@
 #include <sys/types.h>
 #include <sys/un.h>
 
-#include "lxc_log.h"
 #include "af_unix.h"
 #include "error.h"
+
+#include <lxc/log.h>
+
+lxc_log_define(lxc_console, lxc);
 
 extern int lxc_console(const char *name, int ttynum, int *fd)
 {
@@ -41,24 +44,24 @@ extern int lxc_console(const char *name, int ttynum, int *fd)
 
 	sock = lxc_af_unix_connect(addr.sun_path);
 	if (sock < 0) {
-		lxc_log_error("failed to connect to the tty service");
+		ERROR("failed to connect to the tty service");
 		goto out_err;
 	}
 
 	ret = lxc_af_unix_send_credential(sock, &ttynum, sizeof(ttynum));
 	if (ret < 0) {
-		lxc_log_syserror("failed to send credentials");
+		SYSERROR("failed to send credentials");
 		goto out_err;
 	}
 
 	ret = lxc_af_unix_recv_fd(sock, fd, NULL, 0);
 	if (ret < 0) {
-		lxc_log_error("failed to connect to the tty");
+		ERROR("failed to connect to the tty");
 		goto out_err;
 	}
 
 	if (!ret) {
-		lxc_log_error("tty%d denied by '%s'", ttynum, name);
+		ERROR("tty%d denied by '%s'", ttynum, name);
 		ret = -LXC_ERROR_TTY_DENIED;
 		goto out_err;
 	}

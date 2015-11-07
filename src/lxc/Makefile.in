@@ -50,7 +50,7 @@ DIST_COMMON = $(pkginclude_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/lxc-ps.in $(srcdir)/lxc-setcap.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/acinclude.m4 \
-	$(top_srcdir)/configure.in
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -71,9 +71,9 @@ LTLIBRARIES = $(lib_LTLIBRARIES)
 liblxc_la_LIBADD =
 am_liblxc_la_OBJECTS = create.lo destroy.lo start.lo stop.lo \
 	monitor.lo console.lo freezer.lo checkpoint.lo restart.lo \
-	version.lo error.lo parse.lo cgroup.lo lxc_lock.lo lxc_conf.lo \
-	lxc_state.lo lxc_log.lo network.lo nl.lo rtnl.lo genl.lo \
-	mainloop.lo af_unix.lo cr_plugin_columbia.lo
+	version.lo error.lo parse.lo cgroup.lo lock.lo conf.lo \
+	state.lo log.lo network.lo nl.lo rtnl.lo genl.lo mainloop.lo \
+	af_unix.lo cr_plugin_columbia.lo
 liblxc_la_OBJECTS = $(am_liblxc_la_OBJECTS)
 liblxc_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
@@ -90,13 +90,13 @@ lxc_checkpoint_DEPENDENCIES = liblxc.la
 am_lxc_console_OBJECTS = lxc_console.$(OBJEXT)
 lxc_console_OBJECTS = $(am_lxc_console_OBJECTS)
 lxc_console_DEPENDENCIES = liblxc.la
-am_lxc_create_OBJECTS = lxc_create.$(OBJEXT) lxc_config.$(OBJEXT)
+am_lxc_create_OBJECTS = lxc_create.$(OBJEXT) confile.$(OBJEXT)
 lxc_create_OBJECTS = $(am_lxc_create_OBJECTS)
 lxc_create_DEPENDENCIES = liblxc.la
 am_lxc_destroy_OBJECTS = lxc_destroy.$(OBJEXT)
 lxc_destroy_OBJECTS = $(am_lxc_destroy_OBJECTS)
 lxc_destroy_DEPENDENCIES = liblxc.la
-am_lxc_execute_OBJECTS = lxc_execute.$(OBJEXT) lxc_config.$(OBJEXT)
+am_lxc_execute_OBJECTS = lxc_execute.$(OBJEXT) confile.$(OBJEXT)
 lxc_execute_OBJECTS = $(am_lxc_execute_OBJECTS)
 lxc_execute_DEPENDENCIES = liblxc.la
 am_lxc_freeze_OBJECTS = lxc_freeze.$(OBJEXT)
@@ -212,6 +212,7 @@ LIBTOOL = @LIBTOOL@
 LN_S = @LN_S@
 LOCALSTATEDIR = @LOCALSTATEDIR@
 LTLIBOBJS = @LTLIBOBJS@
+LXCPATH = @LXCPATH@
 LXC_MAJOR_VERSION = @LXC_MAJOR_VERSION@
 LXC_MICRO_VERSION = @LXC_MICRO_VERSION@
 LXC_MINOR_VERSION = @LXC_MINOR_VERSION@
@@ -284,23 +285,24 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-INCLUDES = -I$(top_srcdir)/src -DLXCPATH="\"$(localstatedir)/lxc\"" \
+INCLUDES = -I$(top_srcdir)/src -DLXCPATH="\"@LXCPATH@\"" \
 	  -DLXCBINDIR="\"$(bindir)\"" \
 	  -DLXCLIBEXECDIR="\"$(libexecdir)\""
 
 AM_LDFLAGS = -lutil
 lib_LTLIBRARIES = liblxc.la
 pkginclude_HEADERS = \
+		error.h \
 		monitor.h \
+		utils.h \
+		namespace.h \
+		lock.h \
 		lxc.h \
-		lxc_cgroup.h \
-		lxc_conf.h \
-		lxc_list.h \
-		lxc_lock.h \
-		lxc_log.h \
-		lxc_namespace.h \
-		lxc_state.h \
-		lxc_utils.h
+		cgroup.h \
+		conf.h \
+		list.h \
+		log.h \
+		state.h
 
 liblxc_la_SOURCES = \
 	create.c \
@@ -318,12 +320,12 @@ liblxc_la_SOURCES = \
 	cgroup.c cgroup.h \
 	lxc.h \
 	lxc_utils.h \
-	lxc_lock.c lxc_lock.h \
-	lxc_namespace.h \
-	lxc_conf.c lxc_conf.h \
-	lxc_list.h \
-	lxc_state.c lxc_state.h \
-	lxc_log.c lxc_log.h \
+	lock.c lock.h \
+	namespace.h \
+	conf.c conf.h \
+	list.h \
+	state.c state.h \
+	log.c log.h \
 	\
 	network.c network.h \
         nl.c nl.h \
@@ -347,7 +349,7 @@ lxc_unshare_SOURCES = lxc_unshare.c
 lxc_unshare_LDADD = liblxc.la
 lxc_init_SOURCES = lxc_init.c
 lxc_init_LDADD = liblxc.la
-lxc_create_SOURCES = lxc_create.c lxc_config.c lxc_config.h
+lxc_create_SOURCES = lxc_create.c confile.c confile.h
 lxc_create_LDADD = liblxc.la
 lxc_destroy_SOURCES = lxc_destroy.c
 lxc_destroy_LDADD = liblxc.la
@@ -355,7 +357,7 @@ lxc_start_SOURCES = lxc_start.c
 lxc_start_LDADD = liblxc.la
 lxc_stop_SOURCES = lxc_stop.c
 lxc_stop_LDADD = liblxc.la
-lxc_execute_SOURCES = lxc_execute.c lxc_config.c lxc_config.h
+lxc_execute_SOURCES = lxc_execute.c confile.c confile.h
 lxc_execute_LDADD = liblxc.la
 lxc_monitor_SOURCES = lxc_monitor.c
 lxc_monitor_LDADD = liblxc.la
@@ -585,6 +587,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/af_unix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cgroup.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/checkpoint.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/conf.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/confile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/console.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cr_plugin_columbia.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/create.Plo@am__quote@
@@ -592,10 +596,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/error.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/freezer.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/genl.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lock.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/log.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lxc_cgroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lxc_checkpoint.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lxc_conf.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lxc_config.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lxc_console.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lxc_create.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lxc_destroy.Po@am__quote@
@@ -603,12 +607,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lxc_freeze.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lxc_info.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lxc_init.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lxc_lock.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lxc_log.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lxc_monitor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lxc_restart.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lxc_start.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lxc_state.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lxc_stop.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lxc_unfreeze.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lxc_unshare.Po@am__quote@
@@ -622,6 +623,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/restart.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtnl.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/start.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/state.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stop.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/version.Plo@am__quote@
 
@@ -861,8 +863,7 @@ uninstall-am: uninstall-binPROGRAMS uninstall-binSCRIPTS \
 
 
 install-exec-local:
-	@mkdir -p $(localstatedir) && mkdir -p $(prefix)/var/lxc && \
-	chmod ugo+rw $(prefix)/var/lxc
+	@mkdir -p $(DESTDIR)@LXCPATH@
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

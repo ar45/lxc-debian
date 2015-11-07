@@ -35,8 +35,8 @@ static inline int lxc_list_empty(struct lxc_list *list)
 	return list == list->next;
 }
 
-static inline void __lxc_list_add(struct lxc_list *new, 
-				  struct lxc_list *prev, 
+static inline void __lxc_list_add(struct lxc_list *new,
+				  struct lxc_list *prev,
 				  struct lxc_list *next)
 {
         next->prev = new;
@@ -50,7 +50,7 @@ static inline void lxc_list_add(struct lxc_list *head, struct lxc_list *list)
 	__lxc_list_add(list, head, head->next);
 }
 
-static inline void lxc_list_add_tail(struct lxc_list *head, 
+static inline void lxc_list_add_tail(struct lxc_list *head,
 				     struct lxc_list *list)
 {
 	__lxc_list_add(list, head->prev, head);

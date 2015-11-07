@@ -1,0 +1,62 @@
+From c4d7c9dca97955ab0e93c516568b5c52667e9570 Mon Sep 17 00:00:00 2001
+From: Antonio Terceiro <terceiro@debian.org>
+Date: Wed, 19 Aug 2015 22:54:18 +0200
+Subject: [PATCH] lxc-debian: allow not including contrib/non-free
+
+Signed-off-by: Antonio Terceiro <terceiro@debian.org>
+---
+ templates/lxc-debian.in | 14 +++++++++++---
+ 1 file changed, 11 insertions(+), 3 deletions(-)
+
+--- a/templates/lxc-debian.in
++++ b/templates/lxc-debian.in
+@@ -171,13 +171,19 @@ write_sourceslist()
+         prefix="deb [arch=${arch}]"
+     fi
+ 
++    if [ "$mainonly" = 1 ]; then
++      non_main=''
++    else
++      non_main=' contrib non-free'
++    fi
++
+     cat >> "${rootfs}/etc/apt/sources.list" << EOF
+-${prefix} $MIRROR          ${release}         main contrib non-free
++${prefix} $MIRROR          ${release}         main${non_main}
+ EOF
+ 
+     if [ "$release" != "unstable" -a "$release" != "sid" ]; then
+       cat >> "${rootfs}/etc/apt/sources.list" << EOF
+-${prefix} $SECURITY_MIRROR ${release}/updates main contrib non-free
++${prefix} $SECURITY_MIRROR ${release}/updates main${non_main}
+ EOF
+     fi
+ }
+@@ -433,16 +439,17 @@ clean()
+ usage()
+ {
+     cat <<EOF
+-$1 -h|--help -p|--path=<path> [-a|--arch] [-c|--clean] [--mirror=<mirror>] [-r|--release=<release>] [--security-mirror=<security mirror>]
++$1 -h|--help -p|--path=<path> [-a|--arch] [-c|--clean] [--main-only] [--mirror=<mirror>] [-r|--release=<release>] [--security-mirror=<security mirror>]
+ arch: the container architecture (e.g. amd64): defaults to host arch
+ release: the debian release (e.g. wheezy): defaults to current stable
++main-only: include main repository only (no contrib, non-free)
+ mirror: debain mirror to use during installation
+ security mirror: debain mirror to use for security updates
+ EOF
+     return 0
+ }
+ 
+-options=$(getopt -o hp:n:a:r:c -l arch:,clean,help,mirror:,name:,path:,release:,rootfs:,security-mirror: -- "$@")
++options=$(getopt -o hp:n:a:r:c -l arch:,clean,help,main-only,mirror:,name:,path:,release:,rootfs:,security-mirror: -- "$@")
+ if [ $? -ne 0 ]; then
+         usage $(basename $0)
+         exit 1
+@@ -471,6 +478,7 @@ do
+ 
+         -a|--arch)            arch=$2; shift 2;;
+         -c|--clean)           clean=$2; shift 1;;
++           --main-only)       mainonly=1; shift 1;;
+            --mirror)          MIRROR=$2; shift 2;;
+         -n|--name)            name=$2; shift 2;;
+         -p|--path)            path=$2; shift 2;;

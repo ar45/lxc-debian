@@ -2,6 +2,12 @@ lxc (1:1.0.7-11) UNRELEASED; urgency=medium
 
   * New maintainer (myself)
     - Thanks Daniel Baumann for his previous efforts in maintaing lxc
+  * Added patches (all already applied upstream):
+    - 0019-big-big-login-delays-in-CentOS-7-systemd.patch
+    - 0020-Centos7-systemd.patch
+    - 0022-lxc-debian-skip-security-updates-for-unstable-sid.patch
+    - 0023-lxc-debian-support-stretch-Debian-9-images.patch
+    - 0024-lxc-debian-allow-not-including-contrib-non-free.patch
 
  -- Antonio Terceiro <terceiro@debian.org>  Sat, 07 Nov 2015 17:37:03 -0200
 

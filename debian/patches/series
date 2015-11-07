@@ -16,3 +16,8 @@
 0016-systemd-getty.patch
 0017-lxc-clone-rsync-hardlinks.patch
 0018-lxc-clone-rsync-capabilities.patch
+0019-big-big-login-delays-in-CentOS-7-systemd.patch
+0020-Centos7-systemd.patch
+0022-lxc-debian-skip-security-updates-for-unstable-sid.patch
+0023-lxc-debian-support-stretch-Debian-9-images.patch
+0024-lxc-debian-allow-not-including-contrib-non-free.patch

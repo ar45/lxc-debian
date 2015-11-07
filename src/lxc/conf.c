@@ -1427,46 +1427,6 @@ static int setup_autodev(const char *root)
 }
 
 /*
- * Detect whether / is mounted MS_SHARED.  The only way I know of to
- * check that is through /proc/self/mountinfo.
- * I'm only checking for /.  If the container rootfs or mount location
- * is MS_SHARED, but not '/', then you're out of luck - figuring that
- * out would be too much work to be worth it.
- */
-#define LINELEN 4096
-int detect_shared_rootfs(void)
-{
-	char buf[LINELEN], *p;
-	FILE *f;
-	int i;
-	char *p2;
-
-	f = fopen("/proc/self/mountinfo", "r");
-	if (!f)
-		return 0;
-	while (fgets(buf, LINELEN, f)) {
-		for (p = buf, i=0; p && i < 4; i++)
-			p = index(p+1, ' ');
-		if (!p)
-			continue;
-		p2 = index(p+1, ' ');
-		if (!p2)
-			continue;
-		*p2 = '\0';
-		if (strcmp(p+1, "/") == 0) {
-			// this is '/'.  is it shared?
-			p = index(p2+1, ' ');
-			if (p && strstr(p, "shared:")) {
-				fclose(f);
-				return 1;
-			}
-		}
-	}
-	fclose(f);
-	return 0;
-}
-
-/*
  * I'll forgive you for asking whether all of this is needed :)  The
  * answer is yes.
  * pivot_root will fail if the new root, the put_old dir, or the parent
@@ -1544,13 +1504,6 @@ static int setup_rootfs(struct lxc_conf *conf)
 		SYSERROR("failed to access to '%s', check it is present",
 			 rootfs->mount);
 		return -1;
-	}
-
-	if (detect_shared_rootfs()) {
-		if (chroot_into_slave(conf)) {
-			ERROR("Failed to chroot into slave /");
-			return -1;
-		}
 	}
 
 	// First try mounting rootfs using a bdev
@@ -1856,11 +1809,18 @@ int parse_mntopts(const char *mntopts, unsigned long *mntflags,
 
 static int mount_entry(const char *fsname, const char *target,
 		       const char *fstype, unsigned long mountflags,
-		       const char *data)
+		       const char *data, int optional)
 {
 	if (mount(fsname, target, fstype, mountflags & ~MS_REMOUNT, data)) {
-		SYSERROR("failed to mount '%s' on '%s'", fsname, target);
-		return -1;
+		if (optional) {
+			INFO("failed to mount '%s' on '%s' (optional): %s", fsname,
+			     target, strerror(errno));
+			return 0;
+		}
+		else {
+			SYSERROR("failed to mount '%s' on '%s'", fsname, target);
+			return -1;
+		}
 	}
 
 	if ((mountflags & MS_REMOUNT) || (mountflags & MS_BIND)) {
@@ -1870,9 +1830,16 @@ static int mount_entry(const char *fsname, const char *target,
 
 		if (mount(fsname, target, fstype,
 			  mountflags | MS_REMOUNT, data)) {
-			SYSERROR("failed to mount '%s' on '%s'",
-				 fsname, target);
-			return -1;
+			if (optional) {
+				INFO("failed to mount '%s' on '%s' (optional): %s",
+					 fsname, target, strerror(errno));
+				return 0;
+			}
+			else {
+				SYSERROR("failed to mount '%s' on '%s'",
+					 fsname, target);
+				return -1;
+			}
 		}
 	}
 
@@ -1945,10 +1912,7 @@ static inline int mount_entry_on_systemfs(struct mntent *mntent)
 	}
 
 	ret = mount_entry(mntent->mnt_fsname, mntent->mnt_dir,
-			  mntent->mnt_type, mntflags, mntdata);
-
-	if (optional)
-		ret = 0;
+			  mntent->mnt_type, mntflags, mntdata, optional);
 
 	free(pathdirname);
 	free(mntdata);
@@ -2035,12 +1999,9 @@ skipabs:
 	}
 
 	ret = mount_entry(mntent->mnt_fsname, path, mntent->mnt_type,
-			  mntflags, mntdata);
+			  mntflags, mntdata, optional);
 
 	free(mntdata);
-
-	if (optional)
-		ret = 0;
 
 out:
 	free(pathdirname);
@@ -2094,10 +2055,7 @@ static int mount_entry_on_relative_rootfs(struct mntent *mntent,
 	}
 
 	ret = mount_entry(mntent->mnt_fsname, path, mntent->mnt_type,
-			  mntflags, mntdata);
-
-	if (optional)
-		ret = 0;
+			  mntflags, mntdata, optional);
 
 	free(pathdirname);
 	free(mntdata);
@@ -2593,11 +2551,49 @@ static int setup_network(struct lxc_list *network)
 	return 0;
 }
 
-void lxc_rename_phys_nics_on_shutdown(struct lxc_conf *conf)
+/* try to move physical nics to the init netns */
+void restore_phys_nics_to_netns(int netnsfd, struct lxc_conf *conf)
+{
+	int i, ret, oldfd;
+	char path[MAXPATHLEN];
+
+	if (netnsfd < 0)
+		return;
+
+	ret = snprintf(path, MAXPATHLEN, "/proc/self/ns/net");
+	if (ret < 0 || ret >= MAXPATHLEN) {
+		WARN("Failed to open monitor netns fd");
+		return;
+	}
+	if ((oldfd = open(path, O_RDONLY)) < 0) {
+		SYSERROR("Failed to open monitor netns fd");
+		return;
+	}
+	if (setns(netnsfd, 0) != 0) {
+		SYSERROR("Failed to enter container netns to reset nics");
+		close(oldfd);
+		return;
+	}
+	for (i=0; i<conf->num_savednics; i++) {
+		struct saved_nic *s = &conf->saved_nics[i];
+		if (lxc_netdev_move_by_index(s->ifindex, 1))
+			WARN("Error moving nic index:%d back to host netns",
+					s->ifindex);
+	}
+	if (setns(oldfd, 0) != 0)
+		SYSERROR("Failed to re-enter monitor's netns");
+	close(oldfd);
+}
+
+void lxc_rename_phys_nics_on_shutdown(int netnsfd, struct lxc_conf *conf)
 {
 	int i;
 
+	if (conf->num_savednics == 0)
+		return;
+
 	INFO("running to reset %d nic names", conf->num_savednics);
+	restore_phys_nics_to_netns(netnsfd, conf);
 	for (i=0; i<conf->num_savednics; i++) {
 		struct saved_nic *s = &conf->saved_nics[i];
 		INFO("resetting nic %d to %s", s->ifindex, s->orig_name);
@@ -2605,7 +2601,6 @@ void lxc_rename_phys_nics_on_shutdown(struct lxc_conf *conf)
 		free(s->orig_name);
 	}
 	conf->num_savednics = 0;
-	free(conf->saved_nics);
 }
 
 static char *default_rootfs_mount = LXCROOTFSMOUNT;
@@ -3202,10 +3197,28 @@ int lxc_map_ids(struct lxc_list *idmap, pid_t pid)
 {
 	struct lxc_list *iterator;
 	struct id_map *map;
-	int ret = 0;
+	int ret = 0, use_shadow = 0;
 	enum idtype type;
-	char *buf = NULL, *pos;
-	int am_root = (getuid() == 0);
+	char *buf = NULL, *pos, *cmdpath = NULL;
+
+	cmdpath = on_path("newuidmap");
+	if (cmdpath) {
+		use_shadow = 1;
+		free(cmdpath);
+	}
+
+	if (!use_shadow) {
+		cmdpath = on_path("newgidmap");
+		if (cmdpath) {
+			use_shadow = 1;
+			free(cmdpath);
+		}
+	}
+
+	if (!use_shadow && geteuid()) {
+		ERROR("Missing newuidmap/newgidmap");
+		return -1;
+	}
 
 	for(type = ID_TYPE_UID; type <= ID_TYPE_GID; type++) {
 		int left, fill;
@@ -3216,7 +3229,7 @@ int lxc_map_ids(struct lxc_list *idmap, pid_t pid)
 				return -ENOMEM;
 		}
 		pos = buf;
-		if (!am_root)
+		if (use_shadow)
 			pos += sprintf(buf, "new%cidmap %d",
 				type == ID_TYPE_UID ? 'u' : 'g',
 				pid);
@@ -3230,9 +3243,9 @@ int lxc_map_ids(struct lxc_list *idmap, pid_t pid)
 			had_entry = 1;
 			left = 4096 - (pos - buf);
 			fill = snprintf(pos, left, "%s%lu %lu %lu%s",
-					am_root ? "" : " ",
+					use_shadow ? " " : "",
 					map->nsid, map->hostid, map->range,
-					am_root ? "\n" : "");
+					use_shadow ? "" : "\n");
 			if (fill <= 0 || fill >= left)
 				SYSERROR("snprintf failed, too many mappings");
 			pos += fill;
@@ -3240,7 +3253,7 @@ int lxc_map_ids(struct lxc_list *idmap, pid_t pid)
 		if (!had_entry)
 			continue;
 
-		if (am_root) {
+		if (!use_shadow) {
 			ret = write_id_mapping(type, pid, buf, pos-buf);
 		} else {
 			left = 4096 - (pos - buf);
@@ -3470,6 +3483,13 @@ int chown_mapped_root(char *path, struct lxc_conf *conf)
 		}
 		return 0;
 	}
+
+	if (rootid == geteuid()) {
+		// nothing to do
+		INFO("%s: container root is our uid;  no need to chown" ,__func__);
+		return 0;
+	}
+
 	pid = fork();
 	if (pid < 0) {
 		SYSERROR("Failed forking");
@@ -3692,6 +3712,19 @@ int lxc_setup(struct lxc_handler *handler)
 	struct lxc_conf *lxc_conf = handler->conf;
 	const char *lxcpath = handler->lxcpath;
 	void *data = handler->data;
+
+	if (detect_shared_rootfs()) {
+		if (mount(NULL, "/", NULL, MS_SLAVE|MS_REC, NULL)) {
+			SYSERROR("Failed to make / rslave");
+			ERROR("Continuing...");
+		}
+	}
+	if (detect_ramfs_rootfs()) {
+		if (chroot_into_slave(lxc_conf)) {
+			ERROR("Failed to chroot into slave /");
+			return -1;
+		}
+	}
 
 	if (lxc_conf->inherit_ns_fd[LXC_NS_UTS] == -1) {
 		if (setup_utsname(lxc_conf->utsname)) {
@@ -4083,6 +4116,12 @@ int lxc_clear_mount_entries(struct lxc_conf *c)
 	return 0;
 }
 
+int lxc_clear_automounts(struct lxc_conf *c)
+{
+	c->auto_mounts = 0;
+	return 0;
+}
+
 int lxc_clear_hooks(struct lxc_conf *c, const char *key)
 {
 	struct lxc_list *it,*next;
@@ -4115,11 +4154,10 @@ static void lxc_clear_saved_nics(struct lxc_conf *conf)
 {
 	int i;
 
-	if (!conf->num_savednics)
+	if (!conf->saved_nics)
 		return;
 	for (i=0; i < conf->num_savednics; i++)
 		free(conf->saved_nics[i].orig_name);
-	conf->saved_nics = 0;
 	free(conf->saved_nics);
 }
 

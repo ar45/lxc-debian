@@ -21,3 +21,4 @@
 0022-lxc-debian-skip-security-updates-for-unstable-sid.patch
 0023-lxc-debian-support-stretch-Debian-9-images.patch
 0024-lxc-debian-allow-not-including-contrib-non-free.patch
+0025-CVE-2015-1335.patch

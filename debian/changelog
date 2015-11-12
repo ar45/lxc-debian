@@ -1,3 +1,10 @@
+lxc (1:1.0.7-12) UNRELEASED; urgency=high
+
+  * Added 0025-CVE-2015-1335.patch from the final version of the fix for
+    CVE_2015-1335 from the Ubuntu package (Closes: #800471)
+
+ -- Antonio Terceiro <terceiro@debian.org>  Thu, 12 Nov 2015 16:22:02 -0200
+
 lxc (1:1.0.7-11) unstable; urgency=medium
 
   * New maintainer (myself)

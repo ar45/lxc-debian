@@ -1,3 +1,10 @@
+lxc (1:1.0.7-13) UNRELEASED; urgency=medium
+
+  * debian/watch: added
+  * debian/upstream/signing-key.asc: added upstream signing key.
+
+ -- Antonio Terceiro <terceiro@debian.org>  Fri, 20 Nov 2015 14:47:03 -0200
+
 lxc (1:1.0.7-12) unstable; urgency=high
 
   * Added 0025-CVE-2015-1335.patch from the final version of the fix for

@@ -1,5 +1,7 @@
-lxc (1:1.0.7-13) UNRELEASED; urgency=medium
+lxc (1:1.0.8-1) UNRELEASED; urgency=medium
 
+  * New upstream release
+    - Includes fixes for CVE-2015-1335 (Closes: #800471)
   * debian/watch: added
   * debian/upstream/signing-key.asc: added upstream signing key.
 

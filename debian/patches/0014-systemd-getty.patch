@@ -5,12 +5,11 @@ Description: lxc-debian.in: Fixed errors if dbus is not installed (Closes: #7942
  The systemd default files uses 6 tty's instead of the 4 the script creates.
  This will lead to repeated error messages in the systemd journal.
 
-diff -Naurp lxc.orig/templates/lxc-debian.in lxc/templates/lxc-debian.in
---- lxc.orig/templates/lxc-debian.in
-+++ lxc/templates/lxc-debian.in
-@@ -201,6 +201,11 @@ configure_debian_systemd()
-     mkdir -p ${rootfs}/{lib,etc}/systemd/system
-     mkdir -p ${rootfs}/etc/systemd/system/getty.target.wants
+--- a/templates/lxc-debian.in
++++ b/templates/lxc-debian.in
+@@ -202,6 +202,11 @@ configure_debian_systemd()
+         sed 's/ getty@tty[5-9].service//g' $rootfs/lib/systemd/system/getty-static.service |  sed 's/\(tty2-tty\)[5-9]/\14/g' > $rootfs/etc/systemd/system/getty-static.service
+     fi
  
 +    # Fix getty-static-service as debootstrap does not install dbus
 +    if [ -e $rootfs//lib/systemd/system/getty-static.service ] ; then

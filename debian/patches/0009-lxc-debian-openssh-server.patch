@@ -2,10 +2,9 @@ Author: Ondřej Surý <ondrej@debian.org>
 Description: Change PermitRootLogin yes to PermitRootLogin without-password in
  default sshd_config, see https://github.com/lxc/lxc/issues/303.
 
-diff -Naurp lxc.orig/templates/lxc-debian.in lxc/templates/lxc-debian.in
---- lxc.orig/templates/lxc-debian.in
-+++ lxc/templates/lxc-debian.in
-@@ -129,6 +129,9 @@ EOF
+--- a/templates/lxc-debian.in
++++ b/templates/lxc-debian.in
+@@ -121,6 +121,9 @@ EOF
          DPKG_MAINTSCRIPT_PACKAGE=openssh DPKG_MAINTSCRIPT_NAME=postinst chroot $rootfs /var/lib/dpkg/info/openssh-server.postinst configure
          sed -i "s/root@$(hostname)/root@$hostname/g" $rootfs/etc/ssh/ssh_host_*.pub
  

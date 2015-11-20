@@ -10,7 +10,7 @@ Signed-off-by: Antonio Terceiro <terceiro@debian.org>
 
 --- a/templates/lxc-debian.in
 +++ b/templates/lxc-debian.in
-@@ -171,13 +171,19 @@ write_sourceslist()
+@@ -162,13 +162,19 @@ write_sourceslist()
          prefix="deb [arch=${arch}]"
      fi
  
@@ -32,18 +32,25 @@ Signed-off-by: Antonio Terceiro <terceiro@debian.org>
  EOF
      fi
  }
-@@ -433,16 +439,17 @@ clean()
- usage()
- {
-     cat <<EOF
--$1 -h|--help -p|--path=<path> [-a|--arch] [-c|--clean] [--mirror=<mirror>] [-r|--release=<release>] [--security-mirror=<security mirror>]
-+$1 -h|--help -p|--path=<path> [-a|--arch] [-c|--clean] [--main-only] [--mirror=<mirror>] [-r|--release=<release>] [--security-mirror=<security mirror>]
- arch: the container architecture (e.g. amd64): defaults to host arch
- release: the debian release (e.g. wheezy): defaults to current stable
-+main-only: include main repository only (no contrib, non-free)
- mirror: debain mirror to use during installation
- security mirror: debain mirror to use for security updates
- EOF
+@@ -455,7 +461,8 @@ Template specific options can be passed
+   lxc-create --name=NAME [-lxc-create-options] -- [-template-options]
+ 
+ Usage: $1 -h|--help -p|--path=<path> [-c|--clean] [-a|--arch=<arch>] [-r|--release=<release>]
+-                                     [--mirror=<mirror>] [--security-mirror=<security mirror>]
++                                     [--main-only] [--mirror=<mirror>]
++                                     [--security-mirror=<security mirror>]
+ 
+ Options :
+ 
+@@ -465,6 +472,7 @@ Options :
+                          amd64, armhf, armel, powerpc. Defaults to host arch.
+   -r, --release=RELEASE  Debian release. Can be one of: squeeze, wheezy, jessie, sid.
+                          Defaults to current stable.
++  --main-only            Include only Debian's main repository (no contrib/non-free)
+   --mirror=MIRROR        Debian mirror to use during installation. Overrides the MIRROR
+                          environment variable (see below).
+   --security-mirror=SECURITY_MIRROR
+@@ -483,7 +491,7 @@ EOF
      return 0
  }
  
@@ -52,10 +59,10 @@ Signed-off-by: Antonio Terceiro <terceiro@debian.org>
  if [ $? -ne 0 ]; then
          usage $(basename $0)
          exit 1
-@@ -471,6 +478,7 @@ do
+@@ -508,6 +516,7 @@ do
  
          -a|--arch)            arch=$2; shift 2;;
-         -c|--clean)           clean=$2; shift 1;;
+         -c|--clean)           clean=1; shift 1;;
 +           --main-only)       mainonly=1; shift 1;;
             --mirror)          MIRROR=$2; shift 2;;
          -n|--name)            name=$2; shift 2;;

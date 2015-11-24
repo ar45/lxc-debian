@@ -12,6 +12,9 @@ lxc (1:1.0.8-1) UNRELEASED; urgency=medium
       - lxc-debian-support-stretch-Debian-9-images.patch
       - CVE-2015-1335.patch
     - Renumbered patches
+    - Add cgmanager do Recommends:. Without it, lxc will always print a
+      warning, which seems to be harmless but for example will break
+      autopkgtest because of the unexpected output to stderr.
   * debian/watch: added
   * debian/upstream/signing-key.asc: added upstream signing key.
 

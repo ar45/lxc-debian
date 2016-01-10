@@ -1,16 +1,6 @@
 0001-lxcinitdir.patch
-0002-sysvinit-directory.patch
 0003-sysvinit-lsb-headers.patch
 0004-sysvinit-lsb-functions.patch
-0005-sysvinit-lsb-lock.patch
-0006-lxc-attach-sigint.patch
-0007-lxc-patch-shebang.patch
-0008-lxc-debian-fuse.patch
 0009-lxc-debian-openssh-server.patch
 0010-lxc-debian-root-password.patch
-0011-lxc-debian-systemd.patch
-0012-lxc-debian-sysfs.patch
 0013-systemd-targets.patch
-0014-systemd-getty.patch
-0015-Centos7-systemd.patch
-0016-lxc-debian-allow-not-including-contrib-non-free.patch

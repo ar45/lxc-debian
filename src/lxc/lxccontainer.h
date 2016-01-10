@@ -649,7 +649,7 @@ struct lxc_container {
 	 * \brief Create a container snapshot.
 	 *
 	 * Assuming default paths, snapshots will be created as
-	 * \c /var/lib/lxcsnaps/\<c\>/snap\<n\>
+	 * \c /var/lib/lxc/\<c\>/snaps/snap\<n\>
 	 * where \c \<c\> represents the container name and \c \<n\>
 	 * represents the zero-based snapshot number.
 	 *
@@ -691,7 +691,7 @@ struct lxc_container {
 	 *  fail if the  snapshot is overlay-based, since the snapshots
 	 *  will pin the original container.
 	 * \note As an example, if the container exists as \c /var/lib/lxc/c1, snapname might be \c 'snap0'
-	 *  (representing \c /var/lib/lxcsnaps/c1/snap0). If \p newname is \p c2,
+	 *  (representing \c /var/lib/lxc/c1/snaps/snap0). If \p newname is \p c2,
 	 *  then \c snap0 will be copied to \c /var/lib/lxc/c2.
 	 */
 	bool (*snapshot_restore)(struct lxc_container *c, const char *snapname, const char *newname);
@@ -740,6 +740,74 @@ struct lxc_container {
 	 * \return \c true on success, else \c false.
 	 */
 	bool (*remove_device_node)(struct lxc_container *c, const char *src_path, const char *dest_path);
+
+	/* Post LXC-1.0 additions */
+
+	/*!
+	 * \brief Add specified netdev to the container.
+	 *
+	 * \param c Container.
+	 * \param dev name of net device.
+	 *
+	 * \return \c true on success, else \c false.
+	 */
+	bool (*attach_interface)(struct lxc_container *c, const char *dev, const char *dst_dev);
+
+	/*!
+	 * \brief Remove specified netdev from the container.
+	 *
+	 * \param c Container.
+	 * \param dev name of net device.
+	 *
+	 * \return \c true on success, else \c false.
+	 */
+	bool (*detach_interface)(struct lxc_container *c, const char *dev, const char *dst_dev);
+	/*!
+	 * \brief Checkpoint a container.
+	 *
+	 * \param c Container.
+	 * \param directory The directory to dump the container to.
+	 * \param stop Whether or not to stop the container after checkpointing.
+	 * \param verbose Enable criu's verbose logs.
+	 *
+	 * \return \c true on success, else \c false.
+	 * present at compile time).
+	 */
+	bool (*checkpoint)(struct lxc_container *c, char *directory, bool stop, bool verbose);
+
+	/*!
+	 * \brief Restore a container from a checkpoint.
+	 *
+	 * \param c Container.
+	 * \param directory The directory to restore the container from.
+	 * \param verbose Enable criu's verbose logs.
+	 *
+	 * \return \c true on success, else \c false.
+	 *
+	 */
+	bool (*restore)(struct lxc_container *c, char *directory, bool verbose);
+
+	/*!
+	 * \brief Delete the container and all its snapshots.
+	 *
+	 * \param c Container.
+	 *
+	 * \return \c true on success, else \c false.
+	 *
+	 * \note Container must be stopped.
+	 */
+	bool (*destroy_with_snapshots)(struct lxc_container *c);
+
+	/*!
+	 * \brief Destroy all the container's snapshot.
+	 *
+	 * \param c Container.
+	 *
+	 * \return \c true on success, else \c false.
+	 */
+	bool (*snapshot_destroy_all)(struct lxc_container *c);
+
+	/* Post LXC-1.1 additions */
 };
 
 /*!

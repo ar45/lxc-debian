@@ -35,7 +35,7 @@
 #include "initutils.h"
 
 /* returns 1 on success, 0 if there were any failures */
-extern int lxc_rmdir_onedev(char *path);
+extern int lxc_rmdir_onedev(char *path, const char *exclude);
 extern int get_u16(unsigned short *val, const char *arg, int base);
 extern int mkdir_p(const char *dir, mode_t mode);
 extern char *get_rundir(void);
@@ -271,10 +271,16 @@ uint64_t fnv_64a_buf(void *buf, size_t len, uint64_t hval);
 
 int detect_shared_rootfs(void);
 int detect_ramfs_rootfs(void);
-char *on_path(char *cmd);
+char *on_path(char *cmd, const char *rootfs);
+bool file_exists(const char *f);
+char *choose_init(const char *rootfs);
+int print_to_file(const char *file, const char *content);
+bool switch_to_ns(pid_t pid, const char *ns);
+int is_dir(const char *path);
 char *get_template_path(const char *t);
-int null_stdfds(void);
-
+int setproctitle(char *title);
 int safe_mount(const char *src, const char *dest, const char *fstype,
 		unsigned long flags, const void *data, const char *rootfs);
+int mount_proc_if_needed(const char *rootfs);
+int null_stdfds(void);
 #endif /* __LXC_UTILS_H */

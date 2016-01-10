@@ -2,8 +2,8 @@
 # Process this file with autoconf to produce a configure script.
 
 m4_define([lxc_version_major], 1)
-m4_define([lxc_version_minor], 0)
-m4_define([lxc_version_micro], 8)
+m4_define([lxc_version_minor], 1)
+m4_define([lxc_version_micro], 5)
 m4_define([lxc_version_beta], [])
 
 m4_define([lxc_version_base], [lxc_version_major.lxc_version_minor.lxc_version_micro])
@@ -60,13 +60,16 @@ if test "z$with_distro" = "z"; then
 fi
 case $with_distro in
 	ubuntu|raspbian)
-		distroconf=default.conf.ubuntu
+		distroconf=default.conf.lxcbr
+		distrosysconf="$sysconfdir/default"
 		;;
-	redhat|centos|fedora|oracle|oracleserver)
-		distroconf=default.conf.libvirt
+	redhat|centos|fedora|oracle|oracleserver|suse|opensuse*)
+		distroconf=default.conf.lxcbr
+		distrosysconf="$sysconfdir/sysconfig"
 		;;
 	*)
 		distroconf=default.conf.unknown
+		distrosysconf="$sysconfdir/default"
 		;;
 esac
 AC_MSG_RESULT([$with_distro])
@@ -84,7 +87,7 @@ AC_ARG_WITH([init-script],
 case "$with_init_script" in
 	distro)
 		case $with_distro in
-			fedora)
+			fedora|opensuse*)
 				init_script=systemd
 				;;
 			redhat|centos|oracle|oracleserver)
@@ -94,7 +97,7 @@ case "$with_init_script" in
 				init_script=upstart,systemd
 				;;
 			ubuntu)
-				init_script=upstart
+				init_script=upstart,systemd
 				;;
 			*)
 				echo -n "Linux distribution init system unknown."
@@ -123,6 +126,18 @@ AM_CONDITIONAL([INIT_SCRIPT_SYSV], [echo "$init_script" |grep -q "sysvinit"])
 AM_CONDITIONAL([INIT_SCRIPT_SYSTEMD], [echo "$init_script" |grep -q "systemd"])
 AM_CONDITIONAL([INIT_SCRIPT_UPSTART], [echo "$init_script" |grep -q "upstart"])
 AC_MSG_RESULT($init_script)
+
+# systemd unit dir
+AC_ARG_WITH([systemdsystemunitdir],
+            AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files]),
+            [],
+            [with_systemdsystemunitdir=$($PKG_CONFIG --variable=systemdsystemunitdir systemd)])
+if test -z "$with_systemdsystemunitdir"; then
+  with_systemdsystemunitdir=/lib/systemd/system
+fi
+if test "x$with_systemdsystemunitdir" != "xno"; then
+  AC_SUBST([SYSTEMD_UNIT_DIR], [$with_systemdsystemunitdir])
+fi
 
 # Allow disabling rpath
 AC_ARG_ENABLE([rpath],
@@ -279,6 +294,18 @@ if test "x$have_list_controllers" = "xyes"; then
 else
 	AC_MSG_RESULT([no])
 fi
+
+# Check for static libcap, make sure the function checked for differs from the
+# the one checked below so the cache doesn't give a wrong answer
+OLD_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -static"
+AC_CHECK_LIB([cap],[cap_init],[have_static_libcap=yes],[have_static_libcap=no])
+AM_CONDITIONAL([HAVE_STATIC_LIBCAP], [test "x$have_static_libcap" = "xyes"])
+if test "x$have_static_libcap" = "xyes"; then
+	AC_DEFINE([HAVE_STATIC_LIBCAP], 1, [Have static libcap])
+fi
+CFLAGS="$OLD_CFLAGS"
+
 
 # Linux capabilities
 AC_ARG_ENABLE([capabilities],
@@ -507,6 +534,7 @@ AS_AC_EXPAND(LXCPATH, "$with_config_path")
 AS_AC_EXPAND(LXC_GLOBAL_CONF, "$with_global_conf")
 AS_AC_EXPAND(LXC_USERNIC_CONF, "$with_usernic_conf")
 AS_AC_EXPAND(LXC_USERNIC_DB, "$with_usernic_db")
+AS_AC_EXPAND(LXC_DISTRO_SYSCONF, "$distrosysconf")
 AS_AC_EXPAND(LXCROOTFSMOUNT, "$with_rootfs_path")
 AS_AC_EXPAND(LXCTEMPLATEDIR, "$datadir/lxc/templates")
 AS_AC_EXPAND(LXCTEMPLATECONFIG, "$datadir/lxc/config")
@@ -515,6 +543,9 @@ AS_AC_EXPAND(LXCINITDIR, "$libexecdir")
 AS_AC_EXPAND(LOGPATH, "$with_log_path")
 AS_AC_EXPAND(RUNTIME_PATH, "$with_runtime_path")
 AC_SUBST(DEFAULT_CGROUP_PATTERN, ["$with_cgroup_pattern"])
+
+# We need the install path so criu knows where to reference the hook scripts.
+AC_DEFINE_UNQUOTED([DATADIR], "$DATADIR", ["Prefix for shared files."])
 
 # Check for some standard kernel headers
 AC_CHECK_HEADERS([linux/unistd.h linux/netlink.h linux/genetlink.h],
@@ -589,15 +620,25 @@ AC_CONFIG_FILES([
 	config/bash/Makefile
 	config/bash/lxc
 	config/init/Makefile
-	config/init/sysvinit/Makefile
-	config/init/sysvinit/lxc
+	config/init/common/Makefile
+	config/init/common/lxc-containers
+	config/init/common/lxc-net
 	config/init/systemd/Makefile
 	config/init/systemd/lxc.service
+	config/init/systemd/lxc-net.service
+	config/init/sysvinit/Makefile
+	config/init/sysvinit/lxc-containers
+	config/init/sysvinit/lxc-net
+	config/init/upstart/lxc-net.conf
 	config/init/upstart/Makefile
 	config/etc/Makefile
 	config/templates/Makefile
+	config/templates/archlinux.common.conf
+	config/templates/archlinux.userns.conf
 	config/templates/centos.common.conf
 	config/templates/centos.userns.conf
+	config/templates/common.conf
+	config/templates/common.conf.d/Makefile
 	config/templates/debian.common.conf
 	config/templates/debian.userns.conf
 	config/templates/fedora.common.conf
@@ -606,6 +647,8 @@ AC_CONFIG_FILES([
 	config/templates/gentoo.moresecure.conf
 	config/templates/gentoo.userns.conf
 	config/templates/nesting.conf
+	config/templates/opensuse.common.conf
+	config/templates/opensuse.userns.conf
 	config/templates/oracle.common.conf
 	config/templates/oracle.userns.conf
 	config/templates/plamo.common.conf
@@ -616,7 +659,11 @@ AC_CONFIG_FILES([
 	config/templates/ubuntu.common.conf
 	config/templates/ubuntu.lucid.conf
 	config/templates/ubuntu.userns.conf
+	config/templates/openwrt.common.conf
+	config/templates/userns.conf
 	config/yum/Makefile
+	config/sysconfig/Makefile
+	config/sysconfig/lxc
 
 	doc/Makefile
 	doc/api/Makefile
@@ -625,6 +672,7 @@ AC_CONFIG_FILES([
 	doc/lxc-autostart.sgml
 	doc/lxc-cgroup.sgml
 	doc/lxc-checkconfig.sgml
+	doc/lxc-checkpoint.sgml
 	doc/lxc-clone.sgml
 	doc/lxc-config.sgml
 	doc/lxc-console.sgml
@@ -672,6 +720,7 @@ AC_CONFIG_FILES([
 	doc/ja/lxc-autostart.sgml
 	doc/ja/lxc-cgroup.sgml
 	doc/ja/lxc-checkconfig.sgml
+	doc/ja/lxc-checkpoint.sgml
 	doc/ja/lxc-clone.sgml
 	doc/ja/lxc-config.sgml
 	doc/ja/lxc-console.sgml

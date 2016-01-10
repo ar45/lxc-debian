@@ -1,5 +1,8 @@
 /* src/config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* "Prefix for shared files." */
+#undef DATADIR
+
 /* Python3 is available */
 #undef ENABLE_PYTHON
 
@@ -91,6 +94,9 @@
 
 /* Define to 1 if you have the `setns' function. */
 #undef HAVE_SETNS
+
+/* Have static libcap */
+#undef HAVE_STATIC_LIBCAP
 
 /* Define to 1 if you have the `statvfs' function. */
 #undef HAVE_STATVFS

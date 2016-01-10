@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	if (rcfile && lxc_config_read(rcfile, conf)) {
+	if (rcfile && lxc_config_read(rcfile, conf, NULL)) {
 		ERROR("failed to read configuration file");
 		return 1;
 	}
@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
 	if (lxc_config_define_load(&defines, conf))
 		return 1;
 
-	ret = lxc_execute(my_args.name, my_args.argv, my_args.quiet, conf, my_args.lxcpath[0]);
+	ret = lxc_execute(my_args.name, my_args.argv, my_args.quiet, conf, my_args.lxcpath[0], false);
 
 	lxc_conf_free(conf);
 

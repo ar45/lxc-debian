@@ -25,6 +25,7 @@
 
 #include "config.h"
 
+#include <stdio.h>
 #include <netinet/in.h>
 #include <net/if.h>
 #include <sys/param.h>
@@ -236,6 +237,7 @@ enum {
 
 	LXC_AUTO_SYS_RW               = 0x004,   /* /sys */
 	LXC_AUTO_SYS_RO               = 0x008,   /* /sys read-only */
+	LXC_AUTO_SYS_MIXED            = 0x00C,   /* /sys read-only and /sys/class/net read-write */
 	LXC_AUTO_SYS_MASK             = 0x00C,
 
 	LXC_AUTO_CGROUP_RO            = 0x010,   /* /sys/fs/cgroup (partial mount, read-only) */
@@ -304,6 +306,7 @@ struct lxc_conf {
 	struct lxc_list caps;
 	struct lxc_list keepcaps;
 	struct lxc_tty_info tty_info;
+	char *pty_names; // comma-separated list of lxc.tty pty names
 	struct lxc_console console;
 	struct lxc_rootfs rootfs;
 	char *ttydir;
@@ -311,6 +314,7 @@ struct lxc_conf {
 	struct lxc_list hooks[NUM_LXC_HOOKS];
 
 	char *lsm_aa_profile;
+	int lsm_aa_allow_incomplete;
 	char *lsm_se_context;
 	int tmp_umount_proc;
 	char *seccomp;  // filename with the seccomp rules
@@ -331,6 +335,7 @@ struct lxc_conf {
 	// store the config file specified values here.
 	char *logfile;  // the logfile as specifed in config
 	int loglevel;   // loglevel as specifed in config (if any)
+	int logfd;
 
 	int inherit_ns_fd[LXC_NS_MAX];
 
@@ -342,7 +347,29 @@ struct lxc_conf {
 
 	/* set to true when rootfs has been setup */
 	bool rootfs_setup;
+
+	/* list of included files */
+	struct lxc_list includes;
+	/* config entries which are not "lxc.*" are aliens */
+	struct lxc_list aliens;
+
+	/* list of environment variables we'll add to the container when
+	 * started */
+	struct lxc_list environment;
+
+	/* text representation of the config file */
+	char *unexpanded_config;
+	size_t unexpanded_len, unexpanded_alloced;
+
+	/* init command */
+	char *init_cmd;
 };
+
+#ifdef HAVE_TLS
+extern __thread struct lxc_conf *current_config;
+#else
+extern struct lxc_conf *current_config;
+#endif
 
 int run_lxc_hooks(const char *name, char *hook, struct lxc_conf *conf,
 		  const char *lxcpath, char *argv[]);
@@ -377,6 +404,7 @@ extern int lxc_clear_automounts(struct lxc_conf *c);
 extern int lxc_clear_hooks(struct lxc_conf *c, const char *key);
 extern int lxc_clear_idmaps(struct lxc_conf *c);
 extern int lxc_clear_groups(struct lxc_conf *c);
+extern int lxc_clear_environment(struct lxc_conf *c);
 extern int lxc_delete_autodev(struct lxc_handler *handler);
 
 extern int do_rootfs_setup(struct lxc_conf *conf, const char *name,
@@ -401,5 +429,6 @@ extern int parse_mntopts(const char *mntopts, unsigned long *mntflags,
 extern void tmp_proc_unmount(struct lxc_conf *lxc_conf);
 void remount_all_slave(void);
 extern void suggest_default_idmap(void);
+FILE *write_mount_file(struct lxc_list *mount);
 struct lxc_list *sort_cgroup_settings(struct lxc_list* cgroup_settings);
 #endif

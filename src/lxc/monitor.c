@@ -328,7 +328,7 @@ int lxc_monitord_spawn(const char *lxcpath)
 		SYSERROR("failed to setsid");
 		exit(EXIT_FAILURE);
 	}
-	lxc_check_inherited(NULL, pipefd[1]);
+	lxc_check_inherited(NULL, true, pipefd[1]);
 	if (null_stdfds() < 0)
 		exit(EXIT_FAILURE);
 	close(pipefd[0]);

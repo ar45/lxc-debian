@@ -46,6 +46,41 @@ if [ -r /etc/default/lxc ]; then
     . /etc/default/lxc
 fi
 
+# Check if given path is in a btrfs partition
+is_btrfs()
+{
+    [ -e $1 -a $(stat -f -c '%T' $1) = "btrfs" ]
+}
+
+# Check if given path is the root of a btrfs subvolume
+is_btrfs_subvolume()
+{
+    [ -d $1 -a $(stat -f -c '%T' $1) = "btrfs" -a $(stat -c '%i' $1) -eq 256 ]
+}
+
+try_mksubvolume()
+{
+    path=$1
+    [ -d $path ] && return 0
+    mkdir -p $(dirname $path)
+    if which btrfs >/dev/null 2>&1 && is_btrfs $(dirname $path); then
+        btrfs subvolume create $path
+    else
+        mkdir -p $path
+    fi
+}
+
+try_rmsubvolume()
+{
+    path=$1
+    [ -d $path ] || return 0
+    if which btrfs >/dev/null 2>&1 && is_btrfs_subvolume $path; then
+        btrfs subvolume delete $path
+    else
+        rm -rf $path
+    fi
+}
+
 configure_ubuntu()
 {
     rootfs=$1
@@ -278,8 +313,8 @@ install_packages()
 
 cleanup()
 {
-    rm -rf $cache/partial-$arch
-    rm -rf $cache/rootfs-$arch
+    try_rmsubvolume $cache/partial-$arch
+    try_rmsubvolume $cache/rootfs-$arch
 }
 
 suggest_flush()
@@ -311,7 +346,7 @@ download_ubuntu()
 
     trap cleanup EXIT SIGHUP SIGINT SIGTERM
     # check the mini ubuntu was not already downloaded
-    mkdir -p "$cache/partial-$arch"
+    try_mksubvolume "$cache/partial-$arch"
     if [ $? -ne 0 ]; then
         echo "Failed to create '$cache/partial-$arch' directory"
         return 1
@@ -370,8 +405,16 @@ copy_ubuntu()
 
     # make a local copy of the miniubuntu
     echo "Copying rootfs to $rootfs ..."
-    mkdir -p $rootfs
-    rsync -Ha $cache/rootfs-$arch/ $rootfs/ || return 1
+    try_mksubvolume $rootfs
+    if which btrfs >/dev/null 2>&1 && is_btrfs_subvolume $cache/rootfs-$arch && is_btrfs_subvolume $rootfs; then
+      realrootfs=$(dirname $config)/rootfs
+      [ "$rootfs" = "$realrootfs" ] || umount $rootfs || return 1
+      btrfs subvolume delete $realrootfs || return 1
+      btrfs subvolume snapshot $cache/rootfs-$arch $realrootfs || return 1
+      [ "$rootfs" = "$realrootfs" ] || mount --bind $realrootfs $rootfs || return 1
+    else
+      rsync -Ha $cache/rootfs-$arch/ $rootfs/ || return 1
+    fi
     return 0
 }
 
@@ -393,8 +436,8 @@ install_ubuntu()
 
         if [ $flushcache -eq 1 ]; then
             echo "Flushing cache..."
-            rm -rf "$cache/partial-$arch"
-            rm -rf "$cache/rootfs-$arch"
+            try_rmsubvolume $cache/partial-$arch
+            try_rmsubvolume $cache/rootfs-$arch
         fi
 
         echo "Checking cache download in $cache/rootfs-$arch ... "
@@ -440,9 +483,6 @@ copy_configuration()
     fi
 
     # Generate the configuration file
-    ## Create the fstab (empty by default)
-    touch $path/fstab
-
     ## Relocate all the network config entries
     sed -i -e "/lxc.network/{w ${path}/config-network" -e "d}" $path/config
 
@@ -465,7 +505,6 @@ copy_configuration()
     [ -e "$path/config-auto" ] && cat $path/config-auto >> $path/config && rm $path/config-auto
     grep -q "^lxc.rootfs" $path/config 2>/dev/null || echo "lxc.rootfs = $rootfs" >> $path/config
     cat <<EOF >> $path/config
-lxc.mount = $path/fstab
 lxc.utsname = $name
 lxc.arch = $arch
 EOF
@@ -594,7 +633,7 @@ do_bindhome()
     while [ ${h2:0:1} = "/" ]; do
         h2=${h2#/}
     done
-    echo "$h $h2 none bind 0 0" >> $path/fstab
+    echo "lxc.mount.entry = $h $h2 none bind 0 0" >> $path/config
 
     # Make sure the group exists in container
     grp=`echo $pwd | cut -d: -f 4`  # group number for $user

@@ -273,6 +273,37 @@ by KATOH Yasufumi <karma at jazz.email.ne.jp>
     </refsect2>
 
     <refsect2>
+      <title><!-- Init command -->Init コマンド</title>
+      <para>
+        <!--
+        Sets the command to use as the init system for the containers.
+
+        This option is ignored when using lxc-execute.
+
+        Defaults to: /sbin/init
+          -->
+        コンテナの init として使うコマンドを設定します。
+        このオプションは lxc-execute では無視されます。
+        デフォルトは /sbin/init です。
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term>
+            <option>lxc.init_cmd</option>
+          </term>
+          <listitem>
+            <para>
+              <!--
+                  Absolute path from container rootfs to the binary to use as init.
+                -->
+              init として使うバイナリの、コンテナの rootfs からの絶対パスを指定します。
+            </para>
+          </listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2>
       <title><!-- Network -->ネットワーク</title>
       <para>
         <!--
@@ -885,10 +916,10 @@ by KATOH Yasufumi <karma at jazz.email.ne.jp>
 	  <listitem>
 	    <para>
               <!--
-	      Set this to 1 to have LXC mount and populate a minimal
-	      <filename>/dev</filename> when starting the container.
+              Set this to 0 to stop LXC from mounting and populating a minimal
+              <filename>/dev</filename> when starting the container.
               -->
-              コンテナの起動時に LXC が /dev をマウントして、最小限の /dev を作成しているようにするには、これを 1 に設定してください。
+              コンテナの起動時に LXC が /dev をマウントして最小限の /dev を作成するのを止めるには、この値を 0 に設定してください。
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -899,9 +930,9 @@ by KATOH Yasufumi <karma at jazz.email.ne.jp>
       <title><!-- Enable kmsg symlink -->kmsg のシンボリックリンクの有効化</title>
       <para>
         <!--
-      Enable creating /dev/kmsg as symlink to /dev/console.  This defaults to 1.
-      -->
-        /dev/kmsg の /dev/console へのシンボリックリンクとしての作成を有効にします。デフォルトは 1 です。
+        Enable creating /dev/kmsg as symlink to /dev/console.  This defaults to 0.
+        -->
+        /dev/console へのシンボリックリンクとして /dev/kmsg を作成することを有効にします。デフォルトは 0 です。
       </para>
       <variablelist>
     <varlistentry>
@@ -911,9 +942,9 @@ by KATOH Yasufumi <karma at jazz.email.ne.jp>
       <listitem>
         <para>
           <!--
-          Set this to 0 to disable /dev/kmsg symlinking.
+          Set this to 1 to enable /dev/kmsg symlinking.
           -->
-          /dev/kmsg のシンボリックリンクを無効にするには 0 を設定してください。
+          /dev/kmsg へのシンボリックリンクを有効にするには 1 を設定してください。
         </para>
       </listitem>
     </varlistentry>
@@ -933,23 +964,6 @@ by KATOH Yasufumi <karma at jazz.email.ne.jp>
         マウントポイントセクションは、マウントするための区別された場所を指定します。
         これらのマウントポイントは、コンテナだけに見え、コンテナ外で実行されるプロセスから見えることはありません。
         例えば、/etc や /var や /home をマウントするときに役に立つでしょう。
-      </para>
-      <para>
-	<!--
-	NOTE - LXC will generally ensure that mount targets and relative
-	bind-mount sources are properly confined under the container
-	root, to avoid attacks involving over-mounting host directories
-	and files.  (Symbolic links in absolute mount sources are ignored)
-	However, if the container configuration first mounts a directory which
-	is under the control of the container user, such as /home/joe, into
-        the container at some <filename>path</filename>, and then mounts
-        under <filename>path</filename>, then a TOCTTOU attack would be
-        possible where the container user modifies a symbolic link under
-        his home directory at just the right time.
-	  -->
-	注意: 通常 LXC は、マウント対象と相対パス指定のバインドマウントを、適切にコンテナルート以下に閉じ込めます。
-	これは、ホストのディレクトリやファイルに対して重ね合わせを行うようなマウントによる攻撃を防ぎます。(絶対パス指定のマウントソース中の各パスがシンボリックリンクである場合は無視されます。)
-	しかし、もしコンテナの設定が最初に、/home/joe のようなコンテナユーザのコントロール配下にあるディレクトリを、コンテナ中のある <filename>path</filename> にマウントし、その後 <filename>path</filename> 以下でマウントが行われるような場合、コンテナユーザがタイミングを見計らって自身のホームディレクトリ以下でシンボリックリンクを操作するような TOCTTOU 攻撃が成立する可能性があります。
       </para>
       <variablelist>
 	<varlistentry>
@@ -1071,15 +1085,28 @@ proc proc proc nodev,noexec,nosuid 0 0
                 </para>
 	      </listitem>
 	      <listitem>
+		<!--
+                <para>
+                  <option>sys:mixed</option> (or <option>sys</option>):
+                  mount <filename>/sys</filename> as read-only but with
+                  /sys/devices/virtual/net writable.
+                </para>
+		-->
+		<para>
+		  <option>sys:mixed</option> (or <option>sys</option>):
+		  /sys/devices/virtual/net のみ書き込み可能で、その他の <filename>/sys</filename> はリードオンリーでマウントします。
+		</para>
+              </listitem>
+	      <listitem>
                 <!--
 	        <para>
-	          <option>sys:ro</option> (or <option>sys</option>):
+	          <option>sys:ro</option>
 	          mount <filename>/sys</filename> as read-only
 	          for security / container isolation purposes.
 	        </para>
                 -->
                 <para>
-                  <option>sys:ro</option> (or <option>sys</option>):
+                  <option>sys:ro</option>:
                   <filename>/sys</filename> を、セキュリティとコンテナの隔離の目的でリードオンリーでマウントします。
                 </para>
 	      </listitem>
@@ -1299,6 +1326,28 @@ proc proc proc nodev,noexec,nosuid 0 0
               この値はイメージファイル、ディレクトリ、ブロックデバイスのどれかを取ることができます。
               もし指定されない場合、コンテナはホストとルートファイルシステムを共有します。
 	    </para>
+	    <para>
+              <!--
+          For directory or simple block-device backed containers,
+          a pathname can be used.  If the rootfs is backed by a nbd
+          device, then <filename>nbd:file:1</filename> specifies that
+          <filename>file</filename> should be attached to a nbd device,
+          and partition 1 should be mounted as the rootfs.
+          <filename>nbd:file</filename> specifies that the nbd device
+          itself should be mounted.  <filename>overlayfs:/lower:/upper</filename>
+          specifies that the rootfs should be an overlay with <filename>/upper</filename>
+          being mounted read-write over a read-only mount of <filename>/lower</filename>.
+          <filename>aufs:/lower:/upper</filename> does the same using aufs in place
+          of overlayfs. <filename>loop:/file</filename> tells lxc to attach
+          <filename>/file</filename> to a loop device and mount the loop device.
+          -->
+              ディレクトリ、単純なブロックデバイスのバックエンドを持つコンテナの場合、パス名を使うことができます。
+              もし rootfs が nbd デバイスの場合、<filename>nbd:file:1</filename> という指定は <filename>file</filename> を nbd デバイスとして使用し、その 1 番目のパーティションが rootfs としてマウントされます。
+              <filename>nbd:file</filename> という指定は、nbd デバイス自身をマウントします。
+              <filename>overlayfs:/lower:/upper</filename> という指定は、rootfs は <filename>/lower</filename> という読み込み専用でマウントされるディレクトリの上に、<filename>/upper</filename> というディレクトリを読み書き可能で重ね合わせてマウントします。
+              <filename>aufs:/lower:/upper</filename> は overlayfs で指定している部分を aufs と指定すれば同じことになります。
+              <filename>loop:/file</filename> は <filename>/file</filename> を loop デバイスとして使用し、loop デバイスをマウントします。
+	    </para>
 	  </listitem>
 	</varlistentry>
 
@@ -1343,25 +1392,6 @@ proc proc proc nodev,noexec,nosuid 0 0
 	  </listitem>
 	</varlistentry>
 
-	<varlistentry>
-	  <term>
-	    <option>lxc.pivotdir</option>
-	  </term>
-	  <listitem>
-	    <para>
-              <!--
-	      where to pivot the original root file system under
-	      <option>lxc.rootfs</option>, specified relatively to
-	      that.  The default is <filename>mnt</filename>.
-	      It is created if necessary, and also removed after
-	      unmounting everything from it during container setup.
-              -->
-              元の root ファイルシステムを、<option>lxc.rootfs</option> 以下のどこに移動させるかを <option>lxc.rootfs</option> からの相対パスで指定します。
-              デフォルトは <filename>mnt</filename> です。
-              これはもし必要であれば作成され、そしてコンテナのセットアップの間、全てアンマウントされた後で消去されます。
-	    </para>
-	  </listitem>
-	</varlistentry>
       </variablelist>
     </refsect2>
 
@@ -1454,10 +1484,13 @@ proc proc proc nodev,noexec,nosuid 0 0
 	    <para>
               <!--
 	      Specify the capability to be kept in the container. All other
-	      capabilities will be dropped.
+	      capabilities will be dropped. When a special value of "none" is
+	      encountered, lxc will clear any keep capabilities specified up
+	      to this point. A value of "none" alone can be used to drop all
+	      capabilities.
               -->
-              コンテナ内で維持するケーパビリティを指定します。
-              指定した以外の全てのケーパビリティはドロップされます。
+              コンテナ内で維持するケーパビリティを指定します。指定した以外の全てのケーパビリティはドロップされます。
+              特別な値 "none" が指定されている時点で、lxc はこの時点で保持することになっている全てのケーパビリティをクリアします。"none" を単独で使用するとすべてのケーパビリティを削除できます。
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -1492,6 +1525,35 @@ proc proc proc nodev,noexec,nosuid 0 0
               コンテナが apparmor による制限を受けないように設定するには、以下のように設定します。
 	    </para>
 	      <programlisting>lxc.aa_profile = unconfined</programlisting>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>lxc.aa_allow_incomplete</option>
+	  </term>
+	  <listitem>
+	    <para>
+              <!--
+	      Apparmor profiles are pathname based.  Therefore many file
+	      restrictions require mount restrictions to be effective against
+	      a determined attacker.  However, these mount restrictions are not
+	      yet implemented in the upstream kernel.  Without the mount
+	      restrictions, the apparmor profiles still protect against accidental
+	      damager.
+              -->
+              apparmor プロファイルはパス名ベースですので、多数のファイルの制限を行う際、執念深い攻撃者に対して効果的であるためにはマウントの制限が必要です。
+              しかし、これらのマウントの制限は upstream のカーネルではまだ実装されていません。マウントの制限なしでも、apparmor プロファイルによって予想外のダメージに対する保護が可能です。
+	    </para>
+	    <para>
+              <!--
+	      If this flag is 0 (default), then the container will not be
+	      started if the kernel lacks the apparmor mount features, so that a
+	      regression after a kernel upgrade will be detected.  To start the
+	      container under partial apparmor protection, set this flag to 1.
+              -->
+              このフラグが 0 の場合 (デフォルト)、カーネルが apparmor のマウント機能をサポートしていない場合にコンテナが起動しません。これはカーネルを更新した後に機能が退行したことが検出できるようにするためです。
+              不完全な apparmor の保護の下でコンテナを起動するためには、このフラグを 1 に設定してください。
+	    </para>
 	  </listitem>
 	</varlistentry>
       </variablelist>
@@ -2137,6 +2199,55 @@ mknod errno 0
     </para>
 
     </refsect2>
+
+    <refsect2>
+      <title><!-- Container Environment -->コンテナの環境変数</title>
+      <para>
+        <!--
+	If you want to pass environment variables into the container (that
+	is, environment variables which will be available to init and all of
+	its descendents), you can use <command>lxc.environment</command>
+	parameters to do so.  Be careful that you do not pass in anything
+	sensitive; any process in the container which doesn't have its
+	environment scrubbed will have these variables available to it, and
+	environment variables are always available via
+	<command>/proc/PID/environ</command>.
+        -->
+        コンテナに環境変数を渡したい場合 (環境変数はコンテナの init とその子孫全てで利用可能です)、<command>lxc.environment</command> パラメータがその用途に使えます。
+        機微 (センシティブ) な情報を渡さないように注意が必要です。そのような情報を持たないコンテナ内のプロセスでこれらの環境変数が利用可能になってしまいます。環境変数は常に <command>/proc/PID/environ</command> 経由で利用可能になります。
+      </para>
+
+      <para>
+        <!--
+        This configuration parameter can be specified multiple times; once
+        for each environment variable you wish to configure.
+        -->
+        この設定項目は、設定したい環境変数ごとに 1 度ずつ、何度でも指定できます。
+      </para>
+
+      <variablelist>
+	<varlistentry>
+	  <term>
+	    <option>lxc.environment</option>
+	  </term>
+	  <listitem>
+	    <para>
+              <!--
+	      Specify an environment variable to pass into the container.
+	      Example:
+              -->
+              コンテナに渡したい環境変数を指定します。
+              例:
+	    </para>
+	    <programlisting>
+	      lxc.environment = APP_ENV=production
+	      lxc.environment = SYSLOG_SERVER=192.0.2.42
+	    </programlisting>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+
   </refsect1>
 
   <refsect1>

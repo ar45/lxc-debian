@@ -25,6 +25,7 @@
 
 #include <signal.h>
 #include <sys/param.h>
+#include <stdbool.h>
 
 #include "config.h"
 #include "state.h"
@@ -72,14 +73,22 @@ struct lxc_handler {
 	int pinfd;
 	const char *lxcpath;
 	void *cgroup_data;
+	int ttysock[2]; // socketpair for child->parent tty fd passing
+	bool backgrounded; // indicates whether should we close std{in,out,err} on start
 	int nsfd[LXC_NS_MAX];
 };
 
+
+extern int lxc_poll(const char *name, struct lxc_handler *handler);
+extern int lxc_set_state(const char *name, struct lxc_handler *handler, lxc_state_t state);
+extern void lxc_abort(const char *name, struct lxc_handler *handler);
 extern struct lxc_handler *lxc_init(const char *name, struct lxc_conf *, const char *);
+extern void lxc_fini(const char *name, struct lxc_handler *handler);
 
-extern int lxc_check_inherited(struct lxc_conf *conf, int fd_to_ignore);
+extern int lxc_check_inherited(struct lxc_conf *conf, bool closeall, int fd_to_ignore);
 int __lxc_start(const char *, struct lxc_conf *, struct lxc_operations *,
-		void *, const char *);
+		void *, const char *, bool);
 
+extern void resolve_clone_flags(struct lxc_handler *handler);
 #endif
 

@@ -40,10 +40,37 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <assert.h>
+#include <sys/prctl.h>
 
 #include "utils.h"
 #include "log.h"
 #include "lxclock.h"
+#include "namespace.h"
+
+#ifndef PR_SET_MM
+#define PR_SET_MM 35
+#endif
+
+#ifndef PR_SET_MM_MAP
+#define PR_SET_MM_MAP 14
+
+struct prctl_mm_map {
+        uint64_t   start_code;
+        uint64_t   end_code;
+        uint64_t   start_data;
+        uint64_t   end_data;
+        uint64_t   start_brk;
+        uint64_t   brk;
+        uint64_t   start_stack;
+        uint64_t   arg_start;
+        uint64_t   arg_end;
+        uint64_t   env_start;
+        uint64_t   env_end;
+        uint64_t   *auxv;
+        uint32_t   auxv_size;
+        uint32_t   exe_fd;
+};              
+#endif
 
 #ifndef O_PATH
 #define O_PATH      010000000
@@ -60,12 +87,14 @@ lxc_log_define(lxc_utils, lxc);
  */
 extern bool btrfs_try_remove_subvol(const char *path);
 
-static int _recursive_rmdir(char *dirname, dev_t pdev, bool onedev)
+static int _recursive_rmdir(char *dirname, dev_t pdev,
+			    const char *exclude, int level, bool onedev)
 {
 	struct dirent dirent, *direntp;
 	DIR *dir;
 	int ret, failed=0;
 	char pathname[MAXPATHLEN];
+	bool hadexclude = false;
 
 	dir = opendir(dirname);
 	if (!dir) {
@@ -91,6 +120,28 @@ static int _recursive_rmdir(char *dirname, dev_t pdev, bool onedev)
 			continue;
 		}
 
+		if (!level && exclude && !strcmp(direntp->d_name, exclude)) {
+			ret = rmdir(pathname);
+			if (ret < 0) {
+				switch(errno) {
+				case ENOTEMPTY:
+					INFO("Not deleting snapshot %s", pathname);
+					hadexclude = true;
+					break;
+				case ENOTDIR:
+					ret = unlink(pathname);
+					if (ret)
+						INFO("%s: failed to remove %s", __func__, pathname);
+					break;
+				default:
+					SYSERROR("%s: failed to rmdir %s", __func__, pathname);
+					failed = 1;
+					break;
+				}
+			}
+			continue;
+		}
+
 		ret = lstat(pathname, &mystat);
 		if (ret) {
 			ERROR("%s: failed to stat %s", __func__, pathname);
@@ -105,7 +156,7 @@ static int _recursive_rmdir(char *dirname, dev_t pdev, bool onedev)
 			continue;
 		}
 		if (S_ISDIR(mystat.st_mode)) {
-			if (_recursive_rmdir(pathname, pdev, onedev) < 0)
+			if (_recursive_rmdir(pathname, pdev, exclude, level+1, onedev) < 0)
 				failed=1;
 		} else {
 			if (unlink(pathname) < 0) {
@@ -115,7 +166,7 @@ static int _recursive_rmdir(char *dirname, dev_t pdev, bool onedev)
 		}
 	}
 
-	if (rmdir(dirname) < 0 && !btrfs_try_remove_subvol(dirname)) {
+	if (rmdir(dirname) < 0 && !btrfs_try_remove_subvol(dirname) && !hadexclude) {
 		ERROR("%s: failed to delete %s", __func__, dirname);
 		failed=1;
 	}
@@ -149,7 +200,7 @@ static bool is_native_overlayfs(const char *path)
 }
 
 /* returns 0 on success, -1 if there were any failures */
-extern int lxc_rmdir_onedev(char *path)
+extern int lxc_rmdir_onedev(char *path, const char *exclude)
 {
 	struct stat mystat;
 	bool onedev = true;
@@ -165,7 +216,7 @@ extern int lxc_rmdir_onedev(char *path)
 		return -1;
 	}
 
-	return _recursive_rmdir(path, mystat.st_dev, onedev);
+	return _recursive_rmdir(path, mystat.st_dev, exclude, 0, onedev);
 }
 
 /* borrowed from iproute2 */
@@ -1025,6 +1076,31 @@ int detect_shared_rootfs(void)
 	return 0;
 }
 
+bool switch_to_ns(pid_t pid, const char *ns) {
+	int fd, ret;
+	char nspath[MAXPATHLEN];
+
+	/* Switch to new ns */
+	ret = snprintf(nspath, MAXPATHLEN, "/proc/%d/ns/%s", pid, ns);
+	if (ret < 0 || ret >= MAXPATHLEN)
+		return false;
+
+	fd = open(nspath, O_RDONLY);
+	if (fd < 0) {
+		SYSERROR("failed to open %s", nspath);
+		return false;
+	}
+
+	ret = setns(fd, 0);
+	if (ret) {
+		SYSERROR("failed to set process %d to %s of %d.", pid, ns, fd);
+		close(fd);
+		return false;
+	}
+	close(fd);
+	return true;
+}
+
 /*
  * looking at fs/proc_namespace.c, it appears we can
  * actually expect the rootfs entry to very specifically contain
@@ -1064,7 +1140,7 @@ int detect_ramfs_rootfs(void)
 	return 0;
 }
 
-char *on_path(char *cmd) {
+char *on_path(char *cmd, const char *rootfs) {
 	char *path = NULL;
 	char *entry = NULL;
 	char *saveptr = NULL;
@@ -1081,7 +1157,10 @@ char *on_path(char *cmd) {
 
 	entry = strtok_r(path, ":", &saveptr);
 	while (entry) {
-		ret = snprintf(cmdpath, MAXPATHLEN, "%s/%s", entry, cmd);
+		if (rootfs)
+			ret = snprintf(cmdpath, MAXPATHLEN, "%s/%s/%s", rootfs, entry, cmd);
+		else
+			ret = snprintf(cmdpath, MAXPATHLEN, "%s/%s", entry, cmd);
 
 		if (ret < 0 || ret >= MAXPATHLEN)
 			goto next_loop;
@@ -1097,6 +1176,134 @@ next_loop:
 
 	free(path);
 	return NULL;
+}
+
+bool file_exists(const char *f)
+{
+	struct stat statbuf;
+
+	return stat(f, &statbuf) == 0;
+}
+
+/* historically lxc-init has been under /usr/lib/lxc and under
+ * /usr/lib/$ARCH/lxc.  It now lives as $prefix/sbin/init.lxc.
+ */
+char *choose_init(const char *rootfs)
+{
+	char *retv = NULL;
+	const char *empty = "",
+		   *tmp;
+	int ret, env_set = 0;
+	struct stat mystat;
+
+	if (!getenv("PATH")) {
+		if (setenv("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", 0))
+			SYSERROR("Failed to setenv");
+		env_set = 1;
+	}
+
+	retv = on_path("init.lxc", rootfs);
+
+	if (env_set) {
+		if (unsetenv("PATH"))
+			SYSERROR("Failed to unsetenv");
+	}
+
+	if (retv)
+		return retv;
+
+	retv = malloc(PATH_MAX);
+	if (!retv)
+		return NULL;
+
+	if (rootfs)
+		tmp = rootfs;
+	else
+		tmp = empty;
+
+	ret = snprintf(retv, PATH_MAX, "%s/%s/%s", tmp, SBINDIR, "/init.lxc");
+	if (ret < 0 || ret >= PATH_MAX) {
+		ERROR("pathname too long");
+		goto out1;
+	}
+
+	ret = stat(retv, &mystat);
+	if (ret == 0)
+		return retv;
+
+	ret = snprintf(retv, PATH_MAX, "%s/%s/%s", tmp, LXCINITDIR, "/lxc/lxc-init");
+	if (ret < 0 || ret >= PATH_MAX) {
+		ERROR("pathname too long");
+		goto out1;
+	}
+
+	ret = stat(retv, &mystat);
+	if (ret == 0)
+		return retv;
+
+	ret = snprintf(retv, PATH_MAX, "%s/usr/lib/lxc/lxc-init", tmp);
+	if (ret < 0 || ret >= PATH_MAX) {
+		ERROR("pathname too long");
+		goto out1;
+	}
+	ret = stat(retv, &mystat);
+	if (ret == 0)
+		return retv;
+
+	ret = snprintf(retv, PATH_MAX, "%s/sbin/lxc-init", tmp);
+	if (ret < 0 || ret >= PATH_MAX) {
+		ERROR("pathname too long");
+		goto out1;
+	}
+	ret = stat(retv, &mystat);
+	if (ret == 0)
+		return retv;
+
+	/*
+	 * Last resort, look for the statically compiled init.lxc which we
+	 * hopefully bind-mounted in.
+	 * If we are called during container setup, and we get to this point,
+	 * then the init.lxc.static from the host will need to be bind-mounted
+	 * in.  So we return NULL here to indicate that.
+	 */
+	if (rootfs)
+		goto out1;
+
+	ret = snprintf(retv, PATH_MAX, "/init.lxc.static");
+	if (ret < 0 || ret >= PATH_MAX) {
+		WARN("Nonsense - name /lxc.init.static too long");
+		goto out1;
+	}
+	ret = stat(retv, &mystat);
+	if (ret == 0)
+		return retv;
+
+out1:
+	free(retv);
+	return NULL;
+}
+
+int print_to_file(const char *file, const char *content)
+{
+	FILE *f;
+	int ret = 0;
+
+	f = fopen(file, "w");
+	if (!f)
+		return -1;
+	if (fprintf(f, "%s", content) != strlen(content))
+		ret = -1;
+	fclose(f);
+	return ret;
+}
+
+int is_dir(const char *path)
+{
+	struct stat statbuf;
+	int ret = stat(path, &statbuf);
+	if (ret == 0 && S_ISDIR(statbuf.st_mode))
+		return 1;
+	return 0;
 }
 
 /*
@@ -1133,24 +1340,126 @@ char *get_template_path(const char *t)
 	return tpath;
 }
 
-int null_stdfds(void)
+/*
+ * Sets the process title to the specified title. Note:
+ *   1. this function requires root to succeed
+ *   2. it clears /proc/self/environ
+ *   3. it may not succed (e.g. if title is longer than /proc/self/environ +
+ *      the original title)
+ */
+int setproctitle(char *title)
 {
-	int fd, ret = -1;
+	char buf[2048], *tmp;
+	FILE *f;
+	int i, len, ret = 0;
 
-	fd = open("/dev/null", O_RDWR);
-	if (fd < 0)
+	/* We don't really need to know all of this stuff, but unfortunately
+	 * PR_SET_MM_MAP requires us to set it all at once, so we have to
+	 * figure it out anyway.
+	 */
+	unsigned long start_data, end_data, start_brk, start_code, end_code,
+			start_stack, arg_start, arg_end, env_start, env_end,
+			brk_val;
+	struct prctl_mm_map prctl_map;
+
+	f = fopen_cloexec("/proc/self/stat", "r");
+	if (!f) {
+		return -1;
+	}
+
+	tmp = fgets(buf, sizeof(buf), f);
+	fclose(f);
+	if (!tmp) {
+		return -1;
+	}
+
+	/* Skip the first 25 fields, column 26-28 are start_code, end_code,
+	 * and start_stack */
+	tmp = strchr(buf, ' ');
+	for (i = 0; i < 24; i++) {
+		if (!tmp)
+			return -1;
+		tmp = strchr(tmp+1, ' ');
+	}
+	if (!tmp)
 		return -1;
 
-	if (dup2(fd, 0) < 0)
-		goto err;
-	if (dup2(fd, 1) < 0)
-		goto err;
-	if (dup2(fd, 2) < 0)
-		goto err;
+	i = sscanf(tmp, "%lu %lu %lu", &start_code, &end_code, &start_stack);
+	if (i != 3)
+		return -1;
 
-	ret = 0;
-err:
-	close(fd);
+	/* Skip the next 19 fields, column 45-51 are start_data to arg_end */
+	for (i = 0; i < 19; i++) {
+		if (!tmp)
+			return -1;
+		tmp = strchr(tmp+1, ' ');
+	}
+
+	if (!tmp)
+		return -1;
+
+	i = sscanf(tmp, "%lu %lu %lu %lu %lu %lu %lu",
+		&start_data,
+		&end_data,
+		&start_brk,
+		&arg_start,
+		&arg_end,
+		&env_start,
+		&env_end);
+	if (i != 7)
+		return -1;
+
+	/* Include the null byte here, because in the calculations below we
+	 * want to have room for it. */
+	len = strlen(title) + 1;
+
+	/* We're truncating the environment, so we should use at most the
+	 * length of the argument + environment for the title. */
+	if (len > env_end - arg_start) {
+		arg_end = env_end;
+		len = env_end - arg_start;
+		title[len-1] = '\0';
+	} else {
+		/* Only truncate the environment if we're actually going to
+		 * overwrite part of it. */
+		if (len >= arg_end - arg_start) {
+			env_start = env_end;
+		}
+
+		arg_end = arg_start + len;
+
+		/* check overflow */
+		if (arg_end < len || arg_end < arg_start) {
+			return -1;
+		}
+
+	}
+
+	brk_val = syscall(__NR_brk, 0);
+
+	prctl_map = (struct prctl_mm_map) {
+		.start_code = start_code,
+		.end_code = end_code,
+		.start_stack = start_stack,
+		.start_data = start_data,
+		.end_data = end_data,
+		.start_brk = start_brk,
+		.brk = brk_val,
+		.arg_start = arg_start,
+		.arg_end = arg_end,
+		.env_start = env_start,
+		.env_end = env_end,
+		.auxv = NULL,
+		.auxv_size = 0,
+		.exe_fd = -1,
+	};
+
+	ret = prctl(PR_SET_MM, PR_SET_MM_MAP, (long) &prctl_map, sizeof(prctl_map), 0);
+	if (ret == 0)
+		strcpy((char*)arg_start, title);
+	else
+		SYSERROR("setting cmdline failed");
+
 	return ret;
 }
 
@@ -1385,4 +1694,73 @@ int safe_mount(const char *src, const char *dest, const char *fstype,
 	}
 
 	return 0;
+}
+
+/*
+ * Mount a proc under @rootfs if proc self points to a pid other than
+ * my own.  This is needed to have a known-good proc mount for setting
+ * up LSMs both at container startup and attach.
+ *
+ * @rootfs : the rootfs where proc should be mounted
+ *
+ * Returns < 0 on failure, 0 if the correct proc was already mounted
+ * and 1 if a new proc was mounted.
+ */
+int mount_proc_if_needed(const char *rootfs)
+{
+	char path[MAXPATHLEN];
+	char link[20];
+	int linklen, ret;
+	int mypid;
+
+	ret = snprintf(path, MAXPATHLEN, "%s/proc/self", rootfs);
+	if (ret < 0 || ret >= MAXPATHLEN) {
+		SYSERROR("proc path name too long");
+		return -1;
+	}
+	memset(link, 0, 20);
+	linklen = readlink(path, link, 20);
+	mypid = (int)getpid();
+	INFO("I am %d, /proc/self points to '%s'", mypid, link);
+	ret = snprintf(path, MAXPATHLEN, "%s/proc", rootfs);
+	if (ret < 0 || ret >= MAXPATHLEN) {
+		SYSERROR("proc path name too long");
+		return -1;
+	}
+	if (linklen < 0) /* /proc not mounted */
+		goto domount;
+	if (atoi(link) != mypid) {
+		/* wrong /procs mounted */
+		umount2(path, MNT_DETACH); /* ignore failure */
+		goto domount;
+	}
+	/* the right proc is already mounted */
+	return 0;
+
+domount:
+	if (safe_mount("proc", path, "proc", 0, NULL, rootfs) < 0)
+		return -1;
+	INFO("Mounted /proc in container for security transition");
+	return 1;
+}
+
+int null_stdfds(void)
+{
+	int fd, ret = -1;
+
+	fd = open("/dev/null", O_RDWR);
+	if (fd < 0)
+		return -1;
+
+	if (dup2(fd, 0) < 0)
+		goto err;
+	if (dup2(fd, 1) < 0)
+		goto err;
+	if (dup2(fd, 2) < 0)
+		goto err;
+
+	ret = 0;
+err:
+	close(fd);
+	return ret;
 }

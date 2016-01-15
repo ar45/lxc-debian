@@ -1,8 +1,6 @@
 Tests: exercise
 Depends: busybox-static,
-         cloud-image-utils,
          debootstrap,
-         lxcfs,
          uidmap,
          xz-utils,
          @

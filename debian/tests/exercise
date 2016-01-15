@@ -44,6 +44,18 @@ summary() {
     echo "SUMMARY: pass=$TEST_PASS, fail=$TEST_FAIL, ignored=$TEST_IGNORED"
 }
 
+# prepare network features, they are disabled by default on Debian
+# but we want to test them
+echo USE_LXC_BRIDGE=true > /etc/default/lxc-net
+service lxc-net restart
+
+cat <<EOF >/etc/lxc/default.conf
+lxc.network.type = veth
+lxc.network.link = lxcbr0
+lxc.network.flags = up
+lxc.network.hwaddr = 00:16:3e:xx:xx:xx
+EOF
+
 # The actual tests
 ## Default testsuite
 for testbin in /usr/bin/lxc-test-*; do
@@ -86,6 +98,14 @@ for testbin in /usr/bin/lxc-test-*; do
             ignore "$STRING" && continue
     fi
 
+    # Skip some tests on Debian
+    if [ "$(lsb_release --id --short)" = "Debian" ]; then
+        [ "$testbin" = "/usr/bin/lxc-test-apparmor" ] && \
+            ignore "$STRING" && continue
+        [ "$testbin" = "/usr/bin/lxc-test-cloneconfig" ] && \
+            ignore "$STRING" && continue
+    fi
+
     OUT=$(mktemp)
     $testbin >$OUT 2>&1 && pass "$STRING" || fail "$STRING" "$testbin" "$OUT"
     rm $OUT
@@ -93,13 +113,13 @@ done
 
 ## Python3 testsuite
 STRING="python3: API"
-if [ ! -f /usr/share/doc/python3-lxc/examples/api_test.py.gz ]; then
+if [ ! -f /usr/share/doc/lxc/examples/api_test.py.gz ]; then
     ignore "$STRING"
 else
     OUT=$(mktemp)
 
     PYTEST=$(mktemp)
-    cat /usr/share/doc/python3-lxc/examples/api_test.py.gz | gzip -d > $PYTEST
+    cat /usr/share/doc/lxc/examples/api_test.py.gz | gzip -d > $PYTEST
     python3 $PYTEST >$OUT 2>&1 && pass "$STRING" || \
         fail "$STRING" "python3" "$OUT"
     rm $PYTEST

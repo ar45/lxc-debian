@@ -3,5 +3,7 @@ Depends: busybox-static,
          debootstrap,
          uidmap,
          xz-utils,
+         lsb-release,
+         file,
          @
 Restrictions: needs-root allow-stderr

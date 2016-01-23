@@ -1,3 +1,2 @@
 version=3
-opts=pgpsigurlmangle=s/$/.asc/ \
-  https://linuxcontainers.org/lxc/downloads/ .*/lxc-(1\.0\..*).tar.gz
+opts=pgpsigurlmangle=s/$/.asc/ https://linuxcontainers.org/lxc/downloads/ /downloads/lxc/lxc-(.*)\.tar\.gz

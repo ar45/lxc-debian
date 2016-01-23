@@ -5,5 +5,6 @@ Depends: busybox-static,
          xz-utils,
          lsb-release,
          file,
+         dnsmasq-base,
          @
 Restrictions: needs-root allow-stderr

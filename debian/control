@@ -4,6 +4,7 @@ Priority: optional
 Maintainer: Antonio Terceiro <terceiro@debian.org>
 Build-Depends:
  debhelper (>= 9),
+ dh-apparmor,
  dh-autoreconf,
  dh-python,
  dh-systemd,

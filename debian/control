@@ -27,9 +27,19 @@ Homepage: https://linuxcontainers.org/
 Package: lxc
 Architecture: linux-any
 Pre-Depends: ${misc:Pre-Depends}
-Depends: ${misc:Depends}, ${python3:Depends}, ${shlibs:Depends}
-Recommends: cgmanager, debootstrap, openssl, rsync
-Suggests: lua5.2
+Depends: liblxc1 (= ${binary:Version}),
+         ${misc:Depends},
+         ${python3:Depends},
+         ${shlibs:Depends}
+Recommends: apparmor,
+            bridge-utils,
+            cgmanager,
+            debootstrap,
+            dnsmasq-base,
+            iptables,
+            openssl,
+            rsync
+Suggests: btrfs-tools, lua5.2, lvm2
 Description: Linux Containers userspace tools
  Containers are insulated areas inside a system, which have their own namespace
  for filesystem, network, PID, IPC, CPU and memory allocation and which can be

@@ -22,10 +22,11 @@ override_dh_auto_configure:
 		--enable-tests \
 		--enable-configpath-log \
 		--with-distro=debian \
-		--with-init-script=sysvinit,systemd
+		--with-init-script=sysvinit,systemd \
+		--with-systemdsystemunitdir=/lib/systemd/system
 
 override_dh_auto_install:
-	dh_auto_install -- SYSTEMD_UNIT_DIR=/lib/systemd/system
+	dh_auto_install
 
 	# lxc
 	mkdir -p debian/lxc/usr/share/bash-completion

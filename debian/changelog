@@ -1,3 +1,28 @@
+lxc (1:1.1.5-1) UNRELEASED; urgency=medium
+
+  [ Evgeni Golov ]
+  * Imported Upstream version 1.1.5
+  * drop patches either applied or obsoleted upstream
+  * refresh patches
+  * call dh_installinit for lxc-net
+  * drop useless lintian override
+  * add autopkgtests from Ubuntu
+  * fix up some tests for Debian
+  * tests need file and lsb-release
+  * add dnsmasq-base to test depends
+  * update d/watch to look for all LXC releases
+  * use dh_apparmor
+  * do not restart LXC when using systemd
+  * wrap-and-sort
+  * build-depend on gnutls-dev
+  * update Depends/Recommends/Suggests based on the packaging in Ubuntu
+  * fix gnutls package name
+  * properly pass the systemd unit dir to configure
+
+  [ Antonio Terceiro ]
+
+ -- Antonio Terceiro <terceiro@debian.org>  Sat, 23 Jan 2016 22:31:42 -0200
+
 lxc (1:1.0.8-1) unstable; urgency=medium
 
   * New upstream release

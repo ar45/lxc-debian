@@ -4,11 +4,9 @@ Description: Correcting wrong LSB functions in sysvinit script (Closes: #740066)
  https://github.com/lxc/lxc/issues/310,
  and https://github.com/lxc/lxc/issues/311.
 
-diff --git a/config/init/sysvinit/lxc-containers.in b/config/init/sysvinit/lxc-containers.in
-index bc93322..32c2fe7 100644
 --- a/config/init/sysvinit/lxc-containers.in
 +++ b/config/init/sysvinit/lxc-containers.in
-@@ -16,25 +16,17 @@
+@@ -23,25 +23,17 @@
  sysconfdir="@SYSCONFDIR@"
  
  # Source function library.
@@ -40,11 +38,9 @@ index bc93322..32c2fe7 100644
  }
  
  # See how we were called.
-diff --git a/config/init/sysvinit/lxc-net.in b/config/init/sysvinit/lxc-net.in
-index f6892c1..89675e5 100644
 --- a/config/init/sysvinit/lxc-net.in
 +++ b/config/init/sysvinit/lxc-net.in
-@@ -16,25 +16,17 @@
+@@ -20,25 +20,17 @@
  sysconfdir="@SYSCONFDIR@"
  
  # Source function library.

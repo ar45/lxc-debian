@@ -20,8 +20,6 @@ lxc (1:1.1.5-1) UNRELEASED; urgency=medium
   * properly pass the systemd unit dir to configure
 
   [ Antonio Terceiro ]
-  * 0014-systemd-no-getty.patch: skip old workaround for consoles under
-    systemd; consoles work out of the box with lxc > 1.1
 
  -- Antonio Terceiro <terceiro@debian.org>  Sat, 23 Jan 2016 22:31:42 -0200
 

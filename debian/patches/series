@@ -4,4 +4,3 @@
 0009-lxc-debian-openssh-server.patch
 0010-lxc-debian-root-password.patch
 0013-systemd-targets.patch
-0014-systemd-no-getty.patch

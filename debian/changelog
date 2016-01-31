@@ -20,6 +20,8 @@ lxc (1:1.1.5-1) UNRELEASED; urgency=medium
   * properly pass the systemd unit dir to configure
 
   [ Antonio Terceiro ]
+  * 0014-Fix-520-multiple-instances-of-agetty-on-systemd.patch: add
+    upstream patch to avoid multiple instances of agetty on each console.
 
  -- Antonio Terceiro <terceiro@debian.org>  Sat, 23 Jan 2016 22:31:42 -0200
 

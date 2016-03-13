@@ -4,10 +4,10 @@ Description: Correcting wrong default directory for lxc-init,
 
 --- a/configure.ac
 +++ b/configure.ac
-@@ -539,7 +539,7 @@ AS_AC_EXPAND(LXCROOTFSMOUNT, "$with_root
- AS_AC_EXPAND(LXCTEMPLATEDIR, "$datadir/lxc/templates")
+@@ -556,7 +556,7 @@ AS_AC_EXPAND(LXCTEMPLATEDIR, "$datadir/lxc/templates")
  AS_AC_EXPAND(LXCTEMPLATECONFIG, "$datadir/lxc/config")
  AS_AC_EXPAND(LXCHOOKDIR, "$datadir/lxc/hooks")
+ AS_AC_EXPAND(LXCBINHOOKDIR, "$libexecdir/lxc/hooks")
 -AS_AC_EXPAND(LXCINITDIR, "$libexecdir")
 +AS_AC_EXPAND(LXCINITDIR, "$libdir")
  AS_AC_EXPAND(LOGPATH, "$with_log_path")

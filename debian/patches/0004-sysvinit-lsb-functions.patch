@@ -6,7 +6,7 @@ Description: Correcting wrong LSB functions in sysvinit script (Closes: #740066)
 
 --- a/config/init/sysvinit/lxc-containers.in
 +++ b/config/init/sysvinit/lxc-containers.in
-@@ -23,25 +23,17 @@
+@@ -16,27 +16,19 @@
  sysconfdir="@SYSCONFDIR@"
  
  # Source function library.
@@ -26,6 +26,8 @@ Description: Correcting wrong LSB functions in sysvinit script (Closes: #740066)
 +        . /lib/lsb/init-functions
  
  start() {
+     # Setup host /dev for autodev containers.
+     @LIBEXECDIR@/lxc/lxc-devsetup
 -    action $"Starting LXC autoboot containers: " @LIBEXECDIR@/lxc/lxc-containers start
 +    log_daemon_msg "Starting LXC autoboot containers: "
 +    @LIBEXECDIR@/lxc/lxc-containers start

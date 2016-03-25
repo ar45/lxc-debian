@@ -1,7 +1,7 @@
 lxc (1:1.1.5-1) unstable; urgency=medium
 
   LXC before 1.1 did silently ignore lxc.aa_profile if the kernel did
-  not have the AppArmor mount feature (by checking for the existance of
+  not have the AppArmor mount feature (by checking for the existence of
   /sys/kernel/security/apparmor/features/mount/mask).
 
   As of LXC 1.1 it will error out with the following message in the log:

@@ -1,0 +1,11 @@
+--- a/configure.ac
++++ b/configure.ac
+@@ -502,7 +502,7 @@
+ AS_AC_EXPAND(DATADIR, "$datadir")
+ AS_AC_EXPAND(LOCALSTATEDIR, "$localstatedir")
+ AS_AC_EXPAND(DOCDIR, "$docdir")
+-AS_AC_EXPAND(LXC_GENERATE_DATE, "$(date)")
++AS_AC_EXPAND(LXC_GENERATE_DATE, "$(dpkg-parsechangelog -S Date | LC_ALL=C date -u -f - '+%B %d, %Y')")
+ AS_AC_EXPAND(LXCPATH, "$with_config_path")
+ AS_AC_EXPAND(LXC_GLOBAL_CONF, "$with_global_conf")
+ AS_AC_EXPAND(LXC_USERNIC_CONF, "$with_usernic_conf")

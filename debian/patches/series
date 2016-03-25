@@ -5,3 +5,4 @@
 0010-lxc-debian-root-password.patch
 0013-systemd-targets.patch
 0014-Fix-520-multiple-instances-of-agetty-on-systemd.patch
+0017-reproducible-build.patch

@@ -20,6 +20,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
+#include <assert.h>
 #include <stdio.h>
 #include <errno.h>
 #include <limits.h>
@@ -28,6 +29,7 @@
 #include <sys/stat.h>
 #include <string.h>
 #include <pthread.h>
+#include <time.h>
 
 #define __USE_GNU /* for *_CLOEXEC */
 
@@ -40,6 +42,7 @@
 
 #define LXC_LOG_PREFIX_SIZE	32
 #define LXC_LOG_BUFFER_SIZE	512
+#define LXC_LOG_DATEFOMAT_SIZE  15
 
 int lxc_log_fd = -1;
 int lxc_quiet_specified;
@@ -69,7 +72,9 @@ static int log_append_stderr(const struct lxc_log_appender *appender,
 static int log_append_logfile(const struct lxc_log_appender *appender,
 			      struct lxc_log_event *event)
 {
+	char date[LXC_LOG_DATEFOMAT_SIZE] = "20150427012246";
 	char buffer[LXC_LOG_BUFFER_SIZE];
+	const struct tm *t;
 	int n;
 	int ms;
 	int fd_to_use = -1;
@@ -85,11 +90,13 @@ static int log_append_logfile(const struct lxc_log_appender *appender,
 	if (fd_to_use == -1)
 		return 0;
 
+	t = localtime(&event->timestamp.tv_sec);
+	strftime(date, sizeof(date), "%Y%m%d%H%M%S", t);
 	ms = event->timestamp.tv_usec / 1000;
 	n = snprintf(buffer, sizeof(buffer),
-		     "%15s %10ld.%03d %-8s %s - %s:%s:%d - ",
+		     "%15s %10s.%03d %-8s %s - %s:%s:%d - ",
 		     log_prefix,
-		     event->timestamp.tv_sec,
+		     date,
 		     ms,
 		     lxc_log_priority_to_string(event->priority),
 		     event->category,
@@ -246,6 +253,16 @@ static char *build_log_path(const char *name, const char *lxcpath)
 	return p;
 }
 
+extern void lxc_log_close(void)
+{
+	if (lxc_log_fd == -1)
+		return;
+	close(lxc_log_fd);
+	lxc_log_fd = -1;
+	free(log_fname);
+	log_fname = NULL;
+}
+
 /*
  * This can be called:
  *   1. when a program calls lxc_log_init with no logfile parameter (in which
@@ -258,11 +275,12 @@ static int __lxc_log_set_file(const char *fname, int create_dirs)
 {
 	if (lxc_log_fd != -1) {
 		// we are overriding the default.
-		close(lxc_log_fd);
-		free(log_fname);
+		lxc_log_close();
 	}
 
-	if (!fname || strlen(fname) == 0) {
+	assert(fname != NULL);
+
+	if (strlen(fname) == 0) {
 		log_fname = NULL;
 		return 0;
 	}
@@ -372,16 +390,6 @@ extern int lxc_log_init(const char *name, const char *file,
 	}
 
 	return ret;
-}
-
-extern void lxc_log_close(void)
-{
-	if (lxc_log_fd == -1)
-		return;
-	close(lxc_log_fd);
-	lxc_log_fd = -1;
-	free(log_fname);
-	log_fname = NULL;
 }
 
 /*

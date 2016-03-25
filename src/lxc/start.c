@@ -21,29 +21,30 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#define _GNU_SOURCE
 #include "config.h"
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
+#include <alloca.h>
 #include <dirent.h>
 #include <errno.h>
-#include <unistd.h>
-#include <signal.h>
 #include <fcntl.h>
 #include <grp.h>
 #include <poll.h>
-#include <sys/param.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <sys/file.h>
 #include <sys/mount.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/socket.h>
+#include <sys/param.h>
 #include <sys/prctl.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/un.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/syscall.h>
+#include <sys/types.h>
+#include <sys/un.h>
+#include <sys/wait.h>
 
 #if HAVE_SYS_CAPABILITY_H
 #include <sys/capability.h>
@@ -53,23 +54,24 @@
 #define PR_CAPBSET_DROP 24
 #endif
 
-#include "start.h"
-#include "conf.h"
-#include "log.h"
-#include "cgroup.h"
-#include "error.h"
 #include "af_unix.h"
-#include "mainloop.h"
-#include "utils.h"
-#include "lxcutmp.h"
-#include "monitor.h"
-#include "commands.h"
-#include "console.h"
-#include "sync.h"
-#include "namespace.h"
-#include "lxcseccomp.h"
 #include "caps.h"
-#include "bdev.h"
+#include "cgroup.h"
+#include "commands.h"
+#include "conf.h"
+#include "console.h"
+#include "error.h"
+#include "log.h"
+#include "lxclock.h"
+#include "lxcseccomp.h"
+#include "lxcutmp.h"
+#include "mainloop.h"
+#include "monitor.h"
+#include "namespace.h"
+#include "start.h"
+#include "sync.h"
+#include "utils.h"
+#include "bdev/bdev.h"
 #include "lsm/lsm.h"
 
 lxc_log_define(lxc_start, lxc);
@@ -83,17 +85,25 @@ const struct ns_info ns_info[LXC_NS_MAX] = {
 	[LXC_NS_NET] = {"net", CLONE_NEWNET}
 };
 
+extern void mod_all_rdeps(struct lxc_container *c, bool inc);
+static bool do_destroy_container(struct lxc_conf *conf);
+static int lxc_rmdir_onedev_wrapper(void *data);
+static void lxc_destroy_container_on_signal(struct lxc_handler *handler,
+					    const char *name);
+
 static void print_top_failing_dir(const char *path)
 {
 	size_t len = strlen(path);
-	char *copy = alloca(len+1), *p, *e, saved;
+	char *copy = alloca(len + 1), *p, *e, saved;
 	strcpy(copy, path);
 
 	p = copy;
 	e = copy + len;
 	while (p < e) {
-		while (p < e && *p == '/') p++;
-		while (p < e && *p != '/') p++;
+		while (p < e && *p == '/')
+			p++;
+		while (p < e && *p != '/')
+			p++;
 		saved = *p;
 		*p = '\0';
 		if (access(copy, X_OK)) {
@@ -117,8 +127,16 @@ static void close_ns(int ns_fd[LXC_NS_MAX]) {
 	}
 }
 
-static int preserve_ns(int ns_fd[LXC_NS_MAX], int clone_flags, pid_t pid) {
-	int i, saved_errno;
+/*
+ * preserve_ns: open /proc/@pid/ns/@ns for each namespace specified
+ * in clone_flags.
+ * Return true on success, false on failure.  On failure, leave an error
+ * message in *errmsg, which caller must free.
+ */
+static bool preserve_ns(int ns_fd[LXC_NS_MAX], int clone_flags, pid_t pid,
+			char **errmsg)
+{
+	int i, ret;
 	char path[MAXPATHLEN];
 
 	for (i = 0; i < LXC_NS_MAX; i++)
@@ -126,8 +144,9 @@ static int preserve_ns(int ns_fd[LXC_NS_MAX], int clone_flags, pid_t pid) {
 
 	snprintf(path, MAXPATHLEN, "/proc/%d/ns", pid);
 	if (access(path, X_OK)) {
-		WARN("Kernel does not support attach; preserve_ns ignored");
-		return 0;
+		if (asprintf(errmsg, "Kernel does not support setns.") == -1)
+			*errmsg = NULL;
+		return false;
 	}
 
 	for (i = 0; i < LXC_NS_MAX; i++) {
@@ -140,14 +159,20 @@ static int preserve_ns(int ns_fd[LXC_NS_MAX], int clone_flags, pid_t pid) {
 			goto error;
 	}
 
-	return 0;
+	return true;
 
 error:
-	saved_errno = errno;
+	if (errno == ENOENT) {
+		ret = asprintf(errmsg, "Kernel does not support setns for %s",
+			ns_info[i].proc_name);
+	} else {
+		ret = asprintf(errmsg, "Failed to open %s: %s",
+			path, strerror(errno));
+	}
+	if (ret == -1)
+		*errmsg = NULL;
 	close_ns(ns_fd);
-	errno = saved_errno;
-	SYSERROR("failed to open '%s'", path);
-	return -1;
+	return false;
 }
 
 static int attach_ns(const int ns_fd[LXC_NS_MAX]) {
@@ -267,7 +292,7 @@ static int setup_signal_fd(sigset_t *oldmask)
 }
 
 static int signal_handler(int fd, uint32_t events, void *data,
-			   struct lxc_epoll_descr *descr)
+			  struct lxc_epoll_descr *descr)
 {
 	struct signalfd_siginfo siginfo;
 	siginfo_t info;
@@ -430,6 +455,9 @@ struct lxc_handler *lxc_init(const char *name, struct lxc_conf *conf, const char
 	if (conf->console.log_path && setenv("LXC_CONSOLE_LOGPATH", conf->console.log_path, 1)) {
 		SYSERROR("failed to set environment variable for console log");
 	}
+	if (setenv("LXC_CGNS_AWARE", "1", 1)) {
+		SYSERROR("failed to set LXC_CGNS_AWARE environment variable");
+	}
 	/* End of environment variable setup for hooks */
 
 	if (run_lxc_hooks(name, "pre-start", conf, handler->lxcpath, NULL)) {
@@ -479,7 +507,10 @@ out_free:
 
 void lxc_fini(const char *name, struct lxc_handler *handler)
 {
-	int i;
+	int i, rc;
+	pid_t self = getpid();
+	char *namespaces[LXC_NS_MAX+1];
+	size_t namespace_count = 0;
 
 	/* The STOPPING state is there for future cleanup code
 	 * which can take awhile
@@ -488,14 +519,45 @@ void lxc_fini(const char *name, struct lxc_handler *handler)
 
 	for (i = 0; i < LXC_NS_MAX; i++) {
 		if (handler->nsfd[i] != -1) {
+			rc = asprintf(&namespaces[namespace_count], "%s:/proc/%d/fd/%d",
+			              ns_info[i].proc_name, self, handler->nsfd[i]);
+			if (rc == -1) {
+				SYSERROR("failed to allocate memory");
+				break;
+			}
+			++namespace_count;
+		}
+	}
+	namespaces[namespace_count] = NULL;
+
+	if (handler->conf->reboot && setenv("LXC_TARGET", "reboot", 1)) {
+		SYSERROR("failed to set environment variable for stop target");
+	}
+	if (!handler->conf->reboot && setenv("LXC_TARGET", "stop", 1)) {
+		SYSERROR("failed to set environment variable for stop target");
+	}
+
+	if (run_lxc_hooks(name, "stop", handler->conf, handler->lxcpath, namespaces))
+		ERROR("failed to run stop hooks for container '%s'.", name);
+
+	while (namespace_count--)
+		free(namespaces[namespace_count]);
+	for (i = 0; i < LXC_NS_MAX; i++) {
+		if (handler->nsfd[i] != -1) {
 			close(handler->nsfd[i]);
 			handler->nsfd[i] = -1;
 		}
 	}
 	lxc_set_state(name, handler, STOPPED);
 
-	if (run_lxc_hooks(name, "post-stop", handler->conf, handler->lxcpath, NULL))
+	if (run_lxc_hooks(name, "post-stop", handler->conf, handler->lxcpath, NULL)) {
 		ERROR("failed to run post-stop hooks for container '%s'.", name);
+		if (handler->conf->reboot) {
+			WARN("Container will be stopped instead of rebooted.");
+			handler->conf->reboot = 0;
+			setenv("LXC_TARGET", "stop", 1);
+		}
+	}
 
 	/* reset mask set by setup_signal_fd */
 	if (sigprocmask(SIG_SETMASK, &handler->oldmask, NULL))
@@ -510,6 +572,10 @@ void lxc_fini(const char *name, struct lxc_handler *handler)
 		close(handler->ttysock[0]);
 		close(handler->ttysock[1]);
 	}
+
+	if (handler->conf->ephemeral == 1 && handler->conf->reboot != 1)
+		lxc_destroy_container_on_signal(handler, name);
+
 	cgroup_destroy(handler);
 	free(handler);
 }
@@ -679,15 +745,25 @@ static int do_start(void *data)
 
 	/*
 	 * if we are in a new user namespace, become root there to have
-	 * privilege over our namespace
+	 * privilege over our namespace. When using lxc-execute we default to root,
+	 * but this can be overriden using the lxc.init_uid and lxc.init_gid
+	 * configuration options.
 	 */
 	if (!lxc_list_empty(&handler->conf->id_map)) {
-		NOTICE("switching to gid/uid 0 in new user namespace");
-		if (setgid(0)) {
+		gid_t new_gid = 0;
+		if (handler->conf->is_execute && handler->conf->init_gid)
+			new_gid = handler->conf->init_gid;
+
+		uid_t new_uid = 0;
+		if (handler->conf->is_execute && handler->conf->init_uid)
+			new_uid = handler->conf->init_uid;
+
+		NOTICE("switching to gid/uid %d/%d in new user namespace", new_gid, new_uid);
+		if (setgid(new_gid)) {
 			SYSERROR("setgid");
 			goto out_warn_father;
 		}
-		if (setuid(0)) {
+		if (setuid(new_uid)) {
 			SYSERROR("setuid");
 			goto out_warn_father;
 		}
@@ -732,7 +808,7 @@ static int do_start(void *data)
 	 * setup on its console ie. the pty allocated in lxc_console_create()
 	 * so make sure that that pty is stdin,stdout,stderr.
 	 */
-	if (lxc_console_set_stdfds(handler) < 0)
+	if (lxc_console_set_stdfds(handler->conf->console.slave) < 0)
 		goto out_warn_father;
 
 	/* If we mounted a temporary proc, then unmount it now */
@@ -780,6 +856,13 @@ static int do_start(void *data)
 	if (handler->backgrounded && null_stdfds() < 0)
 		goto out_warn_father;
 
+	if (cgns_supported() && unshare(CLONE_NEWCGROUP) != 0) {
+		SYSERROR("Failed to unshare cgroup namespace");
+		goto out_warn_father;
+	}
+
+	setsid();
+
 	/* after this call, we are in error because this
 	 * ops should not return as it execs */
 	handler->ops->start(handler, handler->data);
@@ -794,6 +877,10 @@ out_warn_father:
 static int save_phys_nics(struct lxc_conf *conf)
 {
 	struct lxc_list *iterator;
+	int am_root = (getuid() == 0);
+
+	if (!am_root)
+		return 0;
 
 	lxc_list_for_each(iterator, &conf->network) {
 		struct lxc_netdev *netdev = iterator->elem;
@@ -894,6 +981,7 @@ static int lxc_spawn(struct lxc_handler *handler)
 {
 	int failed_before_rename = 0;
 	const char *name = handler->name;
+	char *errmsg = NULL;
 	bool cgroups_connected = false;
 	int saved_ns_fd[LXC_NS_MAX];
 	int preserve_mask = 0, i;
@@ -968,8 +1056,12 @@ static int lxc_spawn(struct lxc_handler *handler)
 			INFO("failed to pin the container's rootfs");
 	}
 
-	if (preserve_ns(saved_ns_fd, preserve_mask, getpid()) < 0)
+	if (!preserve_ns(saved_ns_fd, preserve_mask, getpid(), &errmsg)) {
+		SYSERROR("Failed to preserve requested namespaces: %s",
+			errmsg ? errmsg : "(Out of memory)");
+		free(errmsg);
 		goto out_delete_net;
+	}
 	if (attach_ns(handler->conf->inherit_ns_fd) < 0)
 		goto out_delete_net;
 
@@ -989,9 +1081,10 @@ static int lxc_spawn(struct lxc_handler *handler)
 		goto out_delete_net;
 	}
 
-	if (preserve_ns(handler->nsfd, handler->clone_flags, handler->pid) < 0) {
-	    ERROR("failed to store namespace references");
-	    goto out_delete_net;
+	if (!preserve_ns(handler->nsfd, handler->clone_flags | preserve_mask, handler->pid, &errmsg)) {
+		INFO("Failed to store namespace references for stop hook: %s",
+			errmsg ? errmsg : "(Out of memory)");
+		free(errmsg);
 	}
 
 	if (attach_ns(saved_ns_fd))
@@ -1022,7 +1115,8 @@ static int lxc_spawn(struct lxc_handler *handler)
 
 	/* Create the network configuration */
 	if (handler->clone_flags & CLONE_NEWNET) {
-		if (lxc_assign_network(&handler->conf->network, handler->pid)) {
+		if (lxc_assign_network(handler->lxcpath, handler->name,
+					&handler->conf->network, handler->pid)) {
 			ERROR("failed to create the configured network");
 			goto out_delete_net;
 		}
@@ -1300,4 +1394,66 @@ int lxc_start(const char *name, char *const argv[], struct lxc_conf *conf,
 
 	conf->need_utmp_watch = 1;
 	return __lxc_start(name, conf, &start_ops, &start_arg, lxcpath, backgrounded);
+}
+
+static void lxc_destroy_container_on_signal(struct lxc_handler *handler,
+					    const char *name)
+{
+	char destroy[MAXPATHLEN];
+	bool bret = true;
+	int ret = 0;
+	struct lxc_container *c;
+	if (handler->conf->rootfs.path && handler->conf->rootfs.mount) {
+		bret = do_destroy_container(handler->conf);
+		if (!bret) {
+			ERROR("Error destroying rootfs for %s", name);
+			return;
+		}
+	}
+	INFO("Destroyed rootfs for %s", name);
+
+	ret = snprintf(destroy, MAXPATHLEN, "%s/%s", handler->lxcpath, name);
+	if (ret < 0 || ret >= MAXPATHLEN) {
+		ERROR("Error printing path for %s", name);
+		ERROR("Error destroying directory for %s", name);
+		return;
+	}
+
+	c = lxc_container_new(name, handler->lxcpath);
+	if (c) {
+		if (container_disk_lock(c)) {
+			INFO("Could not update lxc_snapshots file");
+			lxc_container_put(c);
+		} else {
+			mod_all_rdeps(c, false);
+			container_disk_unlock(c);
+			lxc_container_put(c);
+		}
+	}
+
+	if (am_unpriv())
+		ret = userns_exec_1(handler->conf, lxc_rmdir_onedev_wrapper, destroy);
+	else
+		ret = lxc_rmdir_onedev(destroy, NULL);
+
+	if (ret < 0) {
+		ERROR("Error destroying directory for %s", name);
+		return;
+	}
+	INFO("Destroyed directory for %s", name);
+}
+
+static int lxc_rmdir_onedev_wrapper(void *data)
+{
+	char *arg = (char *) data;
+	return lxc_rmdir_onedev(arg, NULL);
+}
+
+static bool do_destroy_container(struct lxc_conf *conf) {
+	if (am_unpriv()) {
+		if (userns_exec_1(conf, bdev_destroy_wrapper, conf) < 0)
+			return false;
+		return true;
+	}
+	return bdev_destroy(conf);
 }

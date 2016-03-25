@@ -64,6 +64,7 @@ by KATOH Yasufumi <karma at jazz.email.ne.jp>
       <arg choice="opt">-L <replaceable>fssize</replaceable></arg>
       <arg choice="opt">-p <replaceable>lxcpath</replaceable></arg>
       <arg choice="opt">-P <replaceable>newlxcpath</replaceable></arg>
+      <arg choice="opt">-R </arg>
       <arg choice="req">-o <replaceable>orig</replaceable></arg>
       <arg choice="req">-n <replaceable>new</replaceable></arg>
       <arg choice="opt">-- hook arguments</arg>
@@ -78,6 +79,7 @@ by KATOH Yasufumi <karma at jazz.email.ne.jp>
       <arg choice="opt">-L <replaceable>fssize</replaceable></arg>
       <arg choice="opt">-p <replaceable>lxcpath</replaceable></arg>
       <arg choice="opt">-P <replaceable>newlxcpath</replaceable></arg>
+      <arg choice="opt">-R </arg>
       <arg choice="req">orig</arg>
       <arg choice="req">new</arg>
       <arg choice="opt">-- hook arguments</arg>
@@ -276,6 +278,21 @@ by KATOH Yasufumi <karma at jazz.email.ne.jp>
 
       <varlistentry>
 	<term>
+	  <option>-R, --rename</option>
+	</term>
+	<listitem>
+	  <para>
+	    <!--
+	    Rename an existing container.
+	    <replaceable>orig</replaceable> is renamed <replaceable>new</replaceable>.
+	    -->
+	    コンテナの名前を変更します。<replaceable>orig</replaceable> を <replaceable>new</replaceable> という名前に変更します。
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>
 	  <option>-o, --orig <replaceable>orig</replaceable></option>
 	</term>
 	<listitem>
@@ -328,6 +345,17 @@ by KATOH Yasufumi <karma at jazz.email.ne.jp>
       <command>lxc-clone</command> に渡される追加の引数は、フックプログラムに渡される引数の 4 番目以降となります。
       <filename>LXC_ROOTFS_MOUNT</filename> 環境変数には、コンテナの root ファイルシステムがマウントされるパスが与えられます。
       設定ファイルのパス名は <filename>LXC_CONFIG_FILE</filename> に、新しいコンテナ名は <filename>LXC_NAME</filename>、古いコンテナ名は <filename>LXC_SRC_NAME</filename> に、rootfs のあるパスまたはデバイスは <filename>LXC_ROOTFS_PATH</filename> に保存されます。
+    </para>
+  </refsect1>
+
+  <refsect1>
+    <title><!-- Notes -->注意</title>
+    <para>
+      <!--
+    <command>lxc-clone</command> is deprecated in favor of
+    <command>lxc-copy</command>.
+    -->
+      <command>lxc-clone</command> は <command>lxc-copy</command> に置き換えられ、廃止される予定です。
     </para>
   </refsect1>
 

@@ -23,18 +23,34 @@
 
 #define _GNU_SOURCE
 #include <assert.h>
-#include <sys/wait.h>
-#include <sys/types.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <termios.h>
+#include <unistd.h>
+
+#include <lxc/lxccontainer.h>
 
 #include "attach.h"
 #include "arguments.h"
+#include "caps.h"
 #include "config.h"
 #include "confile.h"
-#include "namespace.h"
-#include "caps.h"
+#include "console.h"
 #include "log.h"
+#include "list.h"
+#include "mainloop.h"
 #include "utils.h"
+
+#if HAVE_PTY_H
+#include <pty.h>
+#else
+#include <../include/openpty.h>
+#endif
 
 lxc_log_define(lxc_attach_ui, lxc);
 
@@ -186,20 +202,185 @@ Options :\n\
 	.checker  = NULL,
 };
 
+struct wrapargs {
+	lxc_attach_options_t *options;
+	lxc_attach_command_t *command;
+	struct lxc_console *console;
+	int ptyfd;
+};
+
+/* Minimalistic login_tty() implementation. */
+static int login_pty(int fd)
+{
+	setsid();
+	if (ioctl(fd, TIOCSCTTY, NULL) < 0)
+		return -1;
+	if (lxc_console_set_stdfds(fd) < 0)
+		return -1;
+	if (fd > STDERR_FILENO)
+		close(fd);
+	return 0;
+}
+
+static int get_pty_on_host_callback(void *p)
+{
+	struct wrapargs *wrap = p;
+
+	close(wrap->console->master);
+	if (login_pty(wrap->console->slave) < 0)
+		return -1;
+
+	if (wrap->command->program)
+		lxc_attach_run_command(wrap->command);
+	else
+		lxc_attach_run_shell(NULL);
+	return -1;
+}
+
+static int get_pty_on_host(struct lxc_container *c, struct wrapargs *wrap, int *pid)
+{
+	int ret = -1;
+	struct wrapargs *args = wrap;
+	struct lxc_epoll_descr descr;
+	struct lxc_conf *conf;
+	struct lxc_tty_state *ts;
+
+	INFO("Trying to allocate a pty on the host");
+
+	if (!isatty(args->ptyfd)) {
+		ERROR("stdin is not a tty");
+		return -1;
+	}
+
+	conf = c->lxc_conf;
+	free(conf->console.log_path);
+	conf->console.log_path = NULL;
+
+	/* In the case of lxc-attach our peer pty will always be the current
+	 * controlling terminal. We clear whatever was set by the user for
+	 * lxc.console.path here and set it to "/dev/tty". Doing this will (a)
+	 * prevent segfaults when the container has been setup with
+	 * lxc.console = none and (b) provide an easy way to ensure that we
+	 * always do the correct thing. strdup() must be used since console.path
+	 * is free()ed when we call lxc_container_put(). */
+	free(conf->console.path);
+	conf->console.path = NULL;
+	conf->console.path = strdup("/dev/tty");
+	if (!conf->console.path)
+		return -1;
+
+	/* Create pty on the host. */
+	if (lxc_console_create(conf) < 0)
+		return -1;
+	ts = conf->console.tty_state;
+	/*
+	 * We need to make sure that the ouput that is produced inside the
+	 * container is received on the host. Suppose we want to run
+	 *
+	 *	lxc-attach -n a -- /bin/sh -c 'hostname >&2' > /dev/null
+	 *
+	 * This command produces output on stderr inside the container. On the
+	 * host we close stdout by redirecting it to /dev/null. But stderr is,
+	 * as expected, still connected to a tty. We receive the output produced
+	 * on stderr in the container on stderr on the host.
+	 *
+	 * For the command
+	 *
+	 *	lxc-attach -n a -- /bin/sh -c 'hostname >&2' 2> /dev/null
+	 *
+	 * the logic is analogous but because we now have closed stderr on the
+	 * host no output will be received.
+	 *
+	 * Finally, imagine a more complicated case
+	 *
+	 *	lxc-attach -n a -- /bin/sh -c 'echo OUT; echo ERR >&2' > /tmp/out 2> /tmp/err
+	 *
+	 * Here, we produce output in the container on stdout and stderr. On the
+	 * host we redirect stdout and stderr to files. Because of that stdout
+	 * and stderr are not dup2()ed. Thus, they are not connected to a pty
+	 * and output on stdout and stderr is redirected to the corresponding
+	 * files as expected.
+	 */
+	if (!isatty(STDOUT_FILENO) && isatty(STDERR_FILENO))
+		ts->stdoutfd = STDERR_FILENO;
+	else
+		ts->stdoutfd = STDOUT_FILENO;
+
+	conf->console.descr = &descr;
+
+	/* Shift ttys to container. */
+	if (ttys_shift_ids(conf) < 0) {
+		ERROR("Failed to shift tty into container");
+		goto err1;
+	}
+
+	/* Send wrapper function on its way. */
+	wrap->console = &conf->console;
+	if (c->attach(c, get_pty_on_host_callback, wrap, wrap->options, pid) < 0)
+		goto err1;
+	close(conf->console.slave); /* Close slave side. */
+
+	ret = lxc_mainloop_open(&descr);
+	if (ret) {
+		ERROR("failed to create mainloop");
+		goto err2;
+	}
+
+	/* Register sigwinch handler in mainloop. */
+	ret = lxc_mainloop_add_handler(&descr, ts->sigfd,
+			lxc_console_cb_sigwinch_fd, ts);
+	if (ret) {
+		ERROR("failed to add handler for SIGWINCH fd");
+		goto err3;
+	}
+
+	/* Register i/o callbacks in mainloop. */
+	ret = lxc_mainloop_add_handler(&descr, ts->stdinfd,
+			lxc_console_cb_tty_stdin, ts);
+	if (ret) {
+		ERROR("failed to add handler for stdinfd");
+		goto err3;
+	}
+
+	ret = lxc_mainloop_add_handler(&descr, ts->masterfd,
+			lxc_console_cb_tty_master, ts);
+	if (ret) {
+		ERROR("failed to add handler for masterfd");
+		goto err3;
+	}
+
+	ret = lxc_mainloop(&descr, -1);
+	if (ret) {
+		ERROR("mainloop returned an error");
+		goto err3;
+	}
+	ret = 0;
+
+err3:
+	lxc_mainloop_close(&descr);
+err2:
+	lxc_console_sigwinch_fini(ts);
+err1:
+	lxc_console_delete(&conf->console);
+
+	return ret;
+}
+
 int main(int argc, char *argv[])
 {
-	int ret;
+	int ret = -1;
+	int wexit = 0;
 	pid_t pid;
 	lxc_attach_options_t attach_options = LXC_ATTACH_OPTIONS_DEFAULT;
-	lxc_attach_command_t command;
+	lxc_attach_command_t command = (lxc_attach_command_t){.program = NULL};
 
 	ret = lxc_caps_init();
 	if (ret)
-		return 1;
+		exit(EXIT_FAILURE);
 
 	ret = lxc_arguments_parse(&my_args, argc, argv);
 	if (ret)
-		return 1;
+		exit(EXIT_FAILURE);
 
 	if (!my_args.log_file)
 		my_args.log_file = "none";
@@ -207,8 +388,32 @@ int main(int argc, char *argv[])
 	ret = lxc_log_init(my_args.name, my_args.log_file, my_args.log_priority,
 			   my_args.progname, my_args.quiet, my_args.lxcpath[0]);
 	if (ret)
-		return 1;
+		exit(EXIT_FAILURE);
 	lxc_log_options_no_override();
+
+	if (geteuid()) {
+		if (access(my_args.lxcpath[0], O_RDWR) < 0) {
+			if (!my_args.quiet)
+				fprintf(stderr, "You lack access to %s\n", my_args.lxcpath[0]);
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	struct lxc_container *c = lxc_container_new(my_args.name, my_args.lxcpath[0]);
+	if (!c)
+		exit(EXIT_FAILURE);
+
+	if (!c->may_control(c)) {
+		fprintf(stderr, "Insufficent privileges to control %s\n", c->name);
+		lxc_container_put(c);
+		exit(EXIT_FAILURE);
+	}
+
+	if (!c->is_defined(c)) {
+		fprintf(stderr, "Error: container %s is not defined\n", c->name);
+		lxc_container_put(c);
+		exit(EXIT_FAILURE);
+	}
 
 	if (remount_sys_proc)
 		attach_options.attach_flags |= LXC_ATTACH_REMOUNT_PROC_SYS;
@@ -220,23 +425,42 @@ int main(int argc, char *argv[])
 	attach_options.extra_env_vars = extra_env;
 	attach_options.extra_keep_env = extra_keep;
 
-	if (my_args.argc) {
+	if (my_args.argc > 0) {
 		command.program = my_args.argv[0];
 		command.argv = (char**)my_args.argv;
-		ret = lxc_attach(my_args.name, my_args.lxcpath[0], lxc_attach_run_command, &command, &attach_options, &pid);
+	}
+
+	if (isatty(STDIN_FILENO) || isatty(STDOUT_FILENO) || isatty(STDERR_FILENO)) {
+		struct wrapargs wrap = (struct wrapargs){
+			.command = &command,
+			.options = &attach_options
+		};
+		if (isatty(STDIN_FILENO))
+			wrap.ptyfd = STDIN_FILENO;
+		else if (isatty(STDOUT_FILENO))
+			wrap.ptyfd = STDOUT_FILENO;
+		else if (isatty(STDERR_FILENO))
+			wrap.ptyfd = STDERR_FILENO;
+		ret = get_pty_on_host(c, &wrap, &pid);
 	} else {
-		ret = lxc_attach(my_args.name, my_args.lxcpath[0], lxc_attach_run_shell, NULL, &attach_options, &pid);
+		if (command.program)
+			ret = c->attach(c, lxc_attach_run_command, &command, &attach_options, &pid);
+		else
+			ret = c->attach(c, lxc_attach_run_shell, NULL, &attach_options, &pid);
 	}
 
 	if (ret < 0)
-		return 1;
+		goto out;
 
 	ret = lxc_wait_for_pid_status(pid);
 	if (ret < 0)
-		return 1;
+		goto out;
 
 	if (WIFEXITED(ret))
-		return WEXITSTATUS(ret);
-
-	return 1;
+		wexit = WEXITSTATUS(ret);
+out:
+	lxc_container_put(c);
+	if (ret >= 0)
+		exit(wexit);
+	exit(EXIT_FAILURE);
 }

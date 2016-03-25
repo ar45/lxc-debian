@@ -40,7 +40,8 @@ Recommends: apparmor,
             dnsmasq-base,
             iptables,
             openssl,
-            rsync
+            rsync,
+            uidmap
 Suggests: btrfs-tools, lua5.2, lvm2
 Description: Linux Containers userspace tools
  Containers are insulated areas inside a system, which have their own namespace

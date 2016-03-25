@@ -1,7 +1,13 @@
+lxc (1:1.0.6-6+deb8u2~bpo70+1) wheezy-backports; urgency=high
+
+  * Rebuild for wheezy-backports.
+
+ -- Christian Seiler <christian@iwakd.de>  Thu, 19 Nov 2015 21:05:27 +0100
+
 lxc (1:1.0.6-6+deb8u2) jessie-security; urgency=high
 
-  * CVE-2015-1335: prevent local container administrator from escaping
-    containment via a symlink attack. (Closes: #800471). Also include 2 followup
+  * CVE-2015-1335: prevent local containment administrator from escaping
+    container via symlink attack. (Closes: #800471). Also include 2 followup
     patches that fixed regressions in the original fix. Patches obtained from
     the Ubuntu package:
     - 0020-CVE-2015-1335.patch
@@ -9,6 +15,12 @@ lxc (1:1.0.6-6+deb8u2) jessie-security; urgency=high
     - 0022-CVE-2015-1335-3.patch
 
  -- Antonio Terceiro <terceiro@debian.org>  Fri, 13 Nov 2015 09:53:32 -0200
+
+lxc (1:1.0.6-6+deb8u1~bpo70+1) wheezy-backports; urgency=high
+
+  * Rebuild for wheezy-backports.
+
+ -- Christian Seiler <christian@iwakd.de>  Thu, 30 Jul 2015 15:07:46 +0200
 
 lxc (1:1.0.6-6+deb8u1) jessie-security; urgency=high
 
@@ -22,6 +34,18 @@ lxc (1:1.0.6-6+deb8u1) jessie-security; urgency=high
     (Closes: #793298)
 
  -- Salvatore Bonaccorso <carnil@debian.org>  Wed, 22 Jul 2015 18:12:27 +0200
+
+lxc (1:1.0.6-6~bpo70+2) wheezy-backports; urgency=medium
+
+  * Fix FTBFS on ia64
+
+ -- Christian Seiler <christian@iwakd.de>  Tue, 19 May 2015 08:38:44 +0200
+
+lxc (1:1.0.6-6~bpo70+1) wheezy-backports; urgency=medium
+
+  * Rebuild for wheezy-backports (no changes).
+
+ -- Christian Seiler <christian@iwakd.de>  Sun, 03 May 2015 20:38:41 +0200
 
 lxc (1:1.0.6-6) unstable; urgency=low
 

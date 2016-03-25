@@ -58,6 +58,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
       <arg choice="opt">-L <replaceable>fssize</replaceable></arg>
       <arg choice="opt">-p <replaceable>lxcpath</replaceable></arg>
       <arg choice="opt">-P <replaceable>newlxcpath</replaceable></arg>
+      <arg choice="opt">-R </arg>
       <arg choice="req">-o <replaceable>orig</replaceable></arg>
       <arg choice="req">-n <replaceable>new</replaceable></arg>
       <arg choice="opt">-- hook arguments</arg>
@@ -72,6 +73,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
       <arg choice="opt">-L <replaceable>fssize</replaceable></arg>
       <arg choice="opt">-p <replaceable>lxcpath</replaceable></arg>
       <arg choice="opt">-P <replaceable>newlxcpath</replaceable></arg>
+      <arg choice="opt">-R </arg>
       <arg choice="req">orig</arg>
       <arg choice="req">new</arg>
       <arg choice="opt">-- hook arguments</arg>
@@ -219,6 +221,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
       <varlistentry>
 	<term>
+	  <option>-R, --rename</option>
+	</term>
+	<listitem>
+	  <para>
+	    Rename an existing container.
+	    <replaceable>orig</replaceable> is renamed <replaceable>new</replaceable>.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>
 	  <option>-o, --orig <replaceable>orig</replaceable></option>
 	</term>
 	<listitem>
@@ -258,6 +272,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
       new container name in <filename>LXC_NAME</filename>, the old container name in
       <filename>LXC_SRC_NAME</filename>, and the path or device on which
       the rootfs is located is in <filename>LXC_ROOTFS_PATH</filename>.
+    </para>
+  </refsect1>
+
+  <refsect1>
+    <title>Notes</title>
+    <para>
+    <command>lxc-clone</command> is deprecated in favor of
+    <command>lxc-copy</command>.
     </para>
   </refsect1>
 

@@ -13,14 +13,16 @@ man_MANS = \
 	lxc-cgroup.1 \
 	lxc-checkconfig.1 \
 	lxc-checkpoint.1 \
-	lxc-clone.1 \
 	lxc-config.1 \
 	lxc-console.1 \
+	lxc-copy.1 \
 	lxc-create.1 \
 	lxc-destroy.1 \
+	lxc-device.1 \
 	lxc-execute.1 \
 	lxc-freeze.1 \
 	lxc-info.1 \
+	lxc-ls.1 \
 	lxc-monitor.1 \
 	lxc-snapshot.1 \
 	lxc-start.1 \
@@ -39,12 +41,11 @@ man_MANS = \
 	\
 	lxc.7
 
+if ENABLE_DEPRECATED
+    man_MANS += lxc-clone.1
 if ENABLE_PYTHON
-    man_MANS += lxc-device.1
-    man_MANS += lxc-ls.1
     man_MANS += lxc-start-ephemeral.1
-else
-    man_MANS += legacy/lxc-ls.1
+endif
 endif
 
 %.1 : %.sgml

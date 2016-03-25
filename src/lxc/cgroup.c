@@ -34,6 +34,7 @@ lxc_log_define(lxc_cgroup, lxc);
 static struct cgroup_ops *ops = NULL;
 
 extern struct cgroup_ops *cgfs_ops_init(void);
+extern struct cgroup_ops *cgfsng_ops_init(void);
 extern struct cgroup_ops *cgm_ops_init(void);
 
 __attribute__((constructor))
@@ -48,6 +49,8 @@ void cgroup_ops_init(void)
 	#if HAVE_CGMANAGER
 	ops = cgm_ops_init();
 	#endif
+	if (!ops)
+		ops = cgfsng_ops_init();
 	if (!ops)
 		ops = cgfs_ops_init();
 	if (ops)
@@ -71,7 +74,7 @@ bool cgroup_init(struct lxc_handler *handler)
 void cgroup_destroy(struct lxc_handler *handler)
 {
 	if (ops) {
-		ops->destroy(handler->cgroup_data);
+		ops->destroy(handler->cgroup_data, handler->conf);
 		handler->cgroup_data = NULL;
 	}
 }
@@ -107,6 +110,13 @@ const char *cgroup_get_cgroup(struct lxc_handler *handler, const char *subsystem
 	if (ops)
 		return ops->get_cgroup(handler->cgroup_data, subsystem);
 	return NULL;
+}
+
+bool cgroup_escape(struct lxc_handler *handler)
+{
+	if (ops)
+		return ops->escape(handler->cgroup_data);
+	return false;
 }
 
 const char *cgroup_canonical_path(struct lxc_handler *handler)
@@ -198,7 +208,12 @@ cgroup_driver_t cgroup_driver(void)
 #define INIT_SCOPE "/init.scope"
 void prune_init_scope(char *cg)
 {
-	char *point = cg + strlen(cg) - strlen(INIT_SCOPE);
+	char *point;
+
+	if (!cg)
+		return;
+
+	point = cg + strlen(cg) - strlen(INIT_SCOPE);
 	if (point < cg)
 		return;
 	if (strcmp(point, INIT_SCOPE) == 0) {
@@ -207,4 +222,19 @@ void prune_init_scope(char *cg)
 		else
 			*point = '\0';
 	}
+}
+
+/*
+ * Return true if this is a subsystem which we cannot do
+ * without
+ */
+bool is_crucial_cgroup_subsystem(const char *s)
+{
+	if (strcmp(s, "systemd") == 0)
+		return true;
+	if (strcmp(s, "name=systemd") == 0)
+		return true;
+	if (strcmp(s, "freezer") == 0)
+		return true;
+	return false;
 }

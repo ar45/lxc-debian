@@ -21,8 +21,10 @@ Build-Depends: autotools-dev,
                linux-libc-dev,
                pkg-config,
                python3-dev
-Standards-Version: 3.9.6
+Standards-Version: 3.9.7
 Homepage: https://linuxcontainers.org/
+Vcs-Git: https://anonscm.debian.org/git/pkg-lxc/lxc.git
+Vcs-Browser: https://anonscm.debian.org/cgit/pkg-lxc/lxc.git
 
 Package: lxc
 Architecture: linux-any
@@ -38,7 +40,8 @@ Recommends: apparmor,
             dnsmasq-base,
             iptables,
             openssl,
-            rsync
+            rsync,
+            uidmap
 Suggests: btrfs-tools, lua5.2, lvm2
 Description: Linux Containers userspace tools
  Containers are insulated areas inside a system, which have their own namespace

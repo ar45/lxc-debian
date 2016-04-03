@@ -1,3 +1,21 @@
+lxc (1:2.0.0~rc15-1) experimental; urgency=medium
+
+  * Team upload.
+
+  [ Evgeni Golov ]
+  * Imported Upstream version 2.0.0~rc15
+    + Updates supported Debian releases in template (Closes: #816710)
+    + Does not enable non-free by default anymore (Closes: #793598)
+    + Uses httpredir.debian.org (Closes: #805085)
+  * add uidmap to Recommends (Closes: #817796)
+  * Standards-Version: 3.9.7
+
+  [ Reiner Herrmann ]
+  * use the date from the latest changelog entry when building manpages
+    (Closes: #807837)
+
+ -- Evgeni Golov <evgeni@debian.org>  Sun, 03 Apr 2016 16:09:25 +0200
+
 lxc (1:2.0.0~rc13-1) experimental; urgency=medium
 
   * Team upload.

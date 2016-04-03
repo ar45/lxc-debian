@@ -395,8 +395,8 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-@INIT_SCRIPT_UPSTART_FALSE@uninstall-local:
 @INIT_SCRIPT_UPSTART_FALSE@install-data-local:
+@INIT_SCRIPT_UPSTART_FALSE@uninstall-local:
 clean: clean-am
 
 clean-am: clean-generic mostlyclean-am
@@ -482,7 +482,7 @@ uninstall-am: uninstall-local
 @INIT_SCRIPT_UPSTART_TRUE@install-upstart: lxc.conf lxc-instance.conf lxc-net.conf
 @INIT_SCRIPT_UPSTART_TRUE@	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/init/
 @INIT_SCRIPT_UPSTART_TRUE@	$(INSTALL_DATA) lxc.conf $(DESTDIR)$(sysconfdir)/init/
-@INIT_SCRIPT_UPSTART_TRUE@	$(INSTALL_DATA) lxc-instance.conf $(DESTDIR)$(sysconfdir)/init/
+@INIT_SCRIPT_UPSTART_TRUE@	$(INSTALL_DATA) $(srcdir)/lxc-instance.conf $(DESTDIR)$(sysconfdir)/init/
 @INIT_SCRIPT_UPSTART_TRUE@	$(INSTALL_DATA) lxc-net.conf $(DESTDIR)$(sysconfdir)/init/
 
 @INIT_SCRIPT_UPSTART_TRUE@uninstall-upstart:

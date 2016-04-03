@@ -2163,13 +2163,8 @@ static bool mod_rdep(struct lxc_container *c0, struct lxc_container *c, bool inc
 			}
 
 			if (fbuf.st_size != 0) {
-				/* write terminating \0-byte to file */
-				if (pwrite(fd, "", 1, fbuf.st_size) <= 0) {
-					close(fd);
-					goto out;
-				}
 
-				buf = mmap(NULL, fbuf.st_size + 1, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+				buf = lxc_strmmap(NULL, fbuf.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 				if (buf == MAP_FAILED) {
 					SYSERROR("Failed to create mapping %s", path);
 					close(fd);
@@ -2182,7 +2177,7 @@ static bool mod_rdep(struct lxc_container *c0, struct lxc_container *c, bool inc
 					bytes += len;
 				}
 
-				munmap(buf, fbuf.st_size + 1);
+				lxc_strmunmap(buf, fbuf.st_size);
 				if (ftruncate(fd, fbuf.st_size - bytes) < 0) {
 					SYSERROR("Failed to truncate file %s", path);
 					close(fd);
@@ -3960,10 +3955,10 @@ static int do_lxcapi_migrate(struct lxc_container *c, unsigned int cmd,
 
 	switch (cmd) {
 	case MIGRATE_PRE_DUMP:
-		ret = !__criu_pre_dump(c, opts->directory, opts->verbose, opts->predump_dir);
+		ret = !__criu_pre_dump(c, opts->directory, opts->verbose, opts->predump_dir, opts->pageserver_address, opts->pageserver_port);
 		break;
 	case MIGRATE_DUMP:
-		ret = !__criu_dump(c, opts->directory, opts->stop, opts->verbose, opts->predump_dir);
+		ret = !__criu_dump(c, opts->directory, opts->stop, opts->verbose, opts->predump_dir, opts->pageserver_address, opts->pageserver_port);
 		break;
 	case MIGRATE_RESTORE:
 		ret = !__criu_restore(c, opts->directory, opts->verbose);

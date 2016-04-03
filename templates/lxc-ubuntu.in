@@ -331,6 +331,17 @@ download_ubuntu()
     arch=$2
     release=$3
 
+    case $2 in
+      amd64|i386)
+            MIRROR=${MIRROR:-http://archive.ubuntu.com/ubuntu}
+            SECURITY_MIRROR=${SECURITY_MIRROR:-http://security.ubuntu.com/ubuntu}
+            ;;
+      *)
+            MIRROR=${MIRROR:-http://ports.ubuntu.com/ubuntu-ports}
+            SECURITY_MIRROR=${SECURITY_MIRROR:-http://ports.ubuntu.com/ubuntu-ports}
+            ;;
+    esac
+
     packages_template=${packages_template:-"ssh,vim"}
     debootstrap_parameters=
 

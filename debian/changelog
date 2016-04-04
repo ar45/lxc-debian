@@ -1,4 +1,4 @@
-lxc (1:2.0.0~rc15-1) experimental; urgency=medium
+lxc (1:2.0.0~rc15-1) stable; urgency=medium
 
   * Team upload.
 
@@ -14,7 +14,7 @@ lxc (1:2.0.0~rc15-1) experimental; urgency=medium
   * use the date from the latest changelog entry when building manpages
     (Closes: #807837)
 
- -- Evgeni Golov <evgeni@debian.org>  Sun, 03 Apr 2016 16:09:25 +0200
+ -- Aron Podrigal <aron@mongotel.com>  Sun, 03 Apr 2016 22:09:53 -0400
 
 lxc (1:2.0.0~rc13-1) experimental; urgency=medium
 
